@@ -5997,11 +5997,7 @@ fn (mut g Gen) ident(node ast.Ident) {
 				&& !g.is_assign_lhs) {
 				stmt_str := g.go_before_last_stmt().trim_space()
 				g.empty_line = true
-				var_name := if !g.is_assign_lhs && is_auto_heap {
-					'(*${name})'
-				} else {
-					name
-				}
+				var_name := if !g.is_assign_lhs && is_auto_heap { '(*${name})' } else { name }
 				g.or_block(var_name, node.or_expr, node.info.typ)
 				g.write(stmt_str)
 			}
@@ -7129,11 +7125,7 @@ fn (mut g Gen) return_stmt(node ast.Return) {
 				if fn_return_is_fixed_array && !type0.has_option_or_result() {
 					if node.exprs[0] is ast.Ident {
 						g.writeln('{0};')
-						typ := if node.exprs[0].is_auto_deref_var() {
-							type0.deref()
-						} else {
-							type0
-						}
+						typ := if node.exprs[0].is_auto_deref_var() { type0.deref() } else { type0 }
 						typ_sym := g.table.final_sym(typ)
 						if typ_sym.kind == .array_fixed
 							&& (typ_sym.info as ast.ArrayFixed).is_fn_ret {
