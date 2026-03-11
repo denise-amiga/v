@@ -520,7 +520,7 @@ fn (mut g Gen) string_inter_literal(node ast.StringInterLiteral) {
 
 		if i >= node.exprs.len {
 			// last part of the string
-			g.write('0, { .d_c = 0 }}')
+			g.write('0, { .d_c = 0 }, 0, 0, 0}')
 			break
 		}
 
@@ -563,6 +563,8 @@ fn (mut g Gen) string_inter_literal(node ast.StringInterLiteral) {
 			} else {
 				'2'
 			})
+		} else {
+			g.write(', 0, 0, 0')
 		}
 		g.write('}')
 		if i < (node.vals.len - 1) {
