@@ -310,23 +310,23 @@ fn (mut c Checker) check_expected_call_arg(got_ ast.Type, expected_ ast.Type, la
 
 	idx_got := got.idx()
 	idx_expected := expected.idx()
-	if idx_got in [ast.byteptr_type_idx, ast.charptr_type_idx]
-		|| idx_expected in [ast.byteptr_type_idx, ast.charptr_type_idx] {
+	if got in ast.byteptr_types || got in ast.charptr_types || expected in ast.byteptr_types
+		|| expected in ast.charptr_types {
 		muls_got := got.nr_muls()
 		muls_expected := expected.nr_muls()
-		if idx_got == ast.byteptr_type_idx && idx_expected == ast.u8_type_idx
+		if got in ast.byteptr_types && idx_expected == ast.u8_type_idx
 			&& muls_got + 1 == muls_expected {
 			return
 		}
-		if idx_expected == ast.byteptr_type_idx && idx_got == ast.u8_type_idx
+		if expected in ast.byteptr_types && idx_got == ast.u8_type_idx
 			&& muls_expected + 1 == muls_got {
 			return
 		}
-		if idx_got == ast.charptr_type_idx && idx_expected == ast.char_type_idx
+		if got in ast.charptr_types && idx_expected == ast.char_type_idx
 			&& muls_got + 1 == muls_expected {
 			return
 		}
-		if idx_expected == ast.charptr_type_idx && idx_got == ast.char_type_idx
+		if expected in ast.charptr_types && idx_got == ast.char_type_idx
 			&& muls_expected + 1 == muls_got {
 			return
 		}
@@ -1227,8 +1227,6 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 				}
 				if has_concrete_caller_types && param.is_mut && param_infer_typ.nr_muls() == 0
 					&& typ.is_ptr() && c.table.final_sym(c.unwrap_generic(typ)).kind == .struct {
-					typ = typ.deref()
-				}
 				// resolve &T &&T ...
 				// Use param.typ (not param_infer_typ) to get the actual pointer
 				// count including mut lowering, so that e.g. `mut val T` with
