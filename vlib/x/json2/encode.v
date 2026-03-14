@@ -90,6 +90,10 @@ fn (mut encoder Encoder) encode_value[T](val T) {
 	}
 }
 
+fn encode_concrete_value[T](mut encoder Encoder, val T) {
+	encoder.encode_value[T](val)
+}
+
 fn (mut encoder Encoder) encode_string(val string) {
 	encoder.output << `"`
 	mut buffer_start := 0
@@ -291,7 +295,7 @@ fn (mut encoder Encoder) encode_map[K, T](val map[K]T) {
 		if encoder.prettify {
 			encoder.output << ` `
 		}
-		encoder.encode_value(value)
+		encode_concrete_value[T](mut encoder, value)
 		if i < val.len - 1 {
 			encoder.output << `,`
 			if encoder.prettify {
@@ -345,7 +349,13 @@ fn (mut encoder Encoder) encode_enum[T](val T) {
 fn (mut encoder Encoder) encode_sumtype[T](val T) {
 	$for variant in T.variants {
 		if val is variant {
-			encoder.encode_value(val)
+			$if variant is $map {
+				encoder.encode_map(val)
+			} $else $if variant is $array {
+				encoder.encode_array(val)
+			} $else {
+				encoder.encode_value(val)
+			}
 		}
 	}
 }
