@@ -792,7 +792,13 @@ fn (mut decoder Decoder) decode_value[T](mut val T) ! {
 													val.$(field.name) = decoded_ptr
 												}
 											} $else {
-												decoder.decode_value(mut val.$(field.name))!
+												mut decoded_field_value := val.$(field.name)
+												decoder.decode_value(mut decoded_field_value)!
+												$if field.unaliased_typ is $map {
+													val.$(field.name) = decoded_field_value.move()
+												} $else {
+													val.$(field.name) = decoded_field_value
+												}
 											}
 										}
 										current_field_info.value.is_decoded = true
@@ -1059,14 +1065,6 @@ fn (mut decoder Decoder) decode_map[V](mut val map[string]V) ! {
 		}
 	} else {
 		decoder.decode_error('Expected object, but got ${map_info.value_kind}')!
-	}
-}
-
-fn move_if_map[V](val &V) V {
-	$if V.unaliased_typ is $map {
-		return (*val).move()
-	} $else {
-		return *val
 	}
 }
 
