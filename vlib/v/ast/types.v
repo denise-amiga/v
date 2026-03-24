@@ -494,6 +494,12 @@ pub fn (ts &TypeSymbol) scoped_cname() string {
 				'_T_',
 				' ',
 				'',
+				'&',
+				'__ptr__',
+				'(',
+				'_',
+				')',
+				'_',
 			])
 		} else {
 			ts.info.scoped_name.replace('.', '__')
@@ -510,6 +516,12 @@ pub fn (ts &TypeSymbol) scoped_cname() string {
 			'_T_',
 			' ',
 			'',
+			'&',
+			'__ptr__',
+			'(',
+			'_',
+			')',
+			'_',
 		])
 	} else {
 		ts.cname
