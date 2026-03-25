@@ -1553,10 +1553,11 @@ fn (mut c Checker) type_implements(typ ast.Type, interface_type ast.Type, pos to
 		// `none` "implements" the Error interface
 		return true
 	}
-	if typ_sym.kind == .interface && inter_sym.kind == .interface && !styp.starts_with('JS.')
-		&& !inter_sym.name.starts_with('JS.') {
+	is_interface_upcast := typ_sym.kind == .interface && inter_sym.kind == .interface
+	if is_interface_upcast && !c.table.interface_inherits_interface(utyp, interface_type) {
 		c.error('cannot implement interface `${inter_sym.name}` with a different interface `${styp}`',
 			pos)
+		return false
 	}
 	imethods := if inter_sym.kind == .interface {
 		(inter_sym.info as ast.Interface).methods
@@ -1617,8 +1618,8 @@ fn (mut c Checker) type_implements(typ ast.Type, interface_type ast.Type, pos to
 					pos)
 			}
 		}
-		if utyp != ast.voidptr_type && utyp != ast.nil_type && utyp != ast.none_type
-			&& !inter_sym.info.types.contains(utyp) {
+		if !is_interface_upcast && utyp != ast.voidptr_type && utyp != ast.nil_type
+			&& utyp != ast.none_type && !inter_sym.info.types.contains(utyp) {
 			inter_sym.info.types << utyp
 		}
 		if !inter_sym.info.types.contains(ast.voidptr_type) {
@@ -4141,6 +4142,9 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 				}
 			}
 		} else {
+			if from_sym.kind == .interface && to_sym.kind == .interface {
+				return to_type
+			}
 			ft := c.table.type_to_str(from_type)
 			tt := c.table.type_to_str(to_type)
 			c.error('`${ft}` does not implement interface `${tt}`, cannot cast `${ft}` to interface `${tt}`',
