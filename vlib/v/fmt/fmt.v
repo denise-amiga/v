@@ -868,7 +868,7 @@ pub fn (mut f Fmt) assign_stmt(node ast.AssignStmt) {
 		}
 	}
 	if node.attr.name != '' {
-		f.write(' @[${node.attr.name}]')
+		f.write(' @[${f.attr_body(node.attr)}]')
 	}
 	f.comments(node.end_comments, has_nl: false, same_line: true, level: .keep)
 	if !f.single_line_if {

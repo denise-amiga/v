@@ -1,4 +1,3 @@
-// vfmt off
 @[deprecated('use NewPositional instead')]
 struct OldPositional {}
 
@@ -10,7 +9,6 @@ struct OldMixed {}
 
 @[custom(flag: true, count: 2)]
 struct CustomNamed {}
-// vfmt on
 
 fn test_attribute_call_syntax_positional_and_named_args() {
 	mut positional_msg := ''

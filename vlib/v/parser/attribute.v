@@ -44,6 +44,7 @@ fn (mut p Parser) parse_attr_call(name string, is_at bool, apos token.Pos) []ast
 	mut base_quote := u8(`'`)
 	mut base_has_arg := false
 	mut attrs := []ast.Attr{}
+	mut call_args := []ast.AttrCallArg{}
 	mut has_base_arg := false
 	mut positional_arg_idx := 1
 	for p.tok.kind !in [.rpar, .eof] {
@@ -56,6 +57,13 @@ fn (mut p Parser) parse_attr_call(name string, is_at bool, apos token.Pos) []ast
 			p.check(.colon)
 		}
 		kind, arg, quote := p.parse_attr_arg(' in `(...)`')
+		call_args << ast.AttrCallArg{
+			name:     arg_name
+			has_name: is_named
+			arg:      arg
+			kind:     kind
+			quote:    quote
+		}
 		if is_named {
 			if name == 'deprecated' && arg_name == 'msg' {
 				if has_base_arg {
@@ -69,13 +77,14 @@ fn (mut p Parser) parse_attr_call(name string, is_at bool, apos token.Pos) []ast
 				has_base_arg = true
 			} else {
 				attrs << ast.Attr{
-					name:    '${name}_${arg_name}'
-					has_arg: true
-					arg:     arg
-					kind:    kind
-					quote:   quote
-					pos:     apos.extend(p.prev_tok.pos())
-					has_at:  is_at
+					name:        '${name}_${arg_name}'
+					has_arg:     true
+					arg:         arg
+					kind:        kind
+					quote:       quote
+					pos:         apos.extend(p.prev_tok.pos())
+					has_at:      is_at
+					is_call_arg: true
 				}
 			}
 		} else if !has_base_arg {
@@ -86,13 +95,14 @@ fn (mut p Parser) parse_attr_call(name string, is_at bool, apos token.Pos) []ast
 			has_base_arg = true
 		} else {
 			attrs << ast.Attr{
-				name:    '${name}_${positional_arg_idx}'
-				has_arg: true
-				arg:     arg
-				kind:    kind
-				quote:   quote
-				pos:     apos.extend(p.prev_tok.pos())
-				has_at:  is_at
+				name:        '${name}_${positional_arg_idx}'
+				has_arg:     true
+				arg:         arg
+				kind:        kind
+				quote:       quote
+				pos:         apos.extend(p.prev_tok.pos())
+				has_at:      is_at
+				is_call_arg: true
 			}
 			positional_arg_idx++
 		}
@@ -104,13 +114,15 @@ fn (mut p Parser) parse_attr_call(name string, is_at bool, apos token.Pos) []ast
 	}
 	p.check(.rpar)
 	base_attr := ast.Attr{
-		name:    name
-		has_arg: base_has_arg
-		arg:     base_arg
-		kind:    base_kind
-		quote:   base_quote
-		pos:     apos.extend(p.prev_tok.pos())
-		has_at:  is_at
+		name:      name
+		has_arg:   base_has_arg
+		arg:       base_arg
+		kind:      base_kind
+		quote:     base_quote
+		pos:       apos.extend(p.prev_tok.pos())
+		has_at:    is_at
+		is_call:   true
+		call_args: call_args
 	}
 	attrs.insert(0, base_attr)
 	return attrs
@@ -124,17 +136,20 @@ fn (mut p Parser) parse_attr(is_at bool) []ast.Attr {
 	}
 	apos := if is_at { p.peek_token(-2).pos() } else { p.prev_tok.pos() }
 	if p.tok.kind == .key_unsafe {
+		mut is_call := false
 		p.next()
 		if p.tok.kind == .lpar {
+			is_call = true
 			p.check(.lpar)
 			p.check(.rpar)
 		}
 		return [
 			ast.Attr{
-				name:   'unsafe'
-				kind:   kind
-				pos:    apos.extend(p.prev_tok.pos())
-				has_at: is_at
+				name:    'unsafe'
+				kind:    kind
+				pos:     apos.extend(p.prev_tok.pos())
+				has_at:  is_at
+				is_call: is_call
 			},
 		]
 	}
@@ -237,10 +252,18 @@ fn (mut p Parser) attributes() {
 		p.check(.lsbr)
 		is_at = true
 	}
+	p.attr_group_id++
+	group_id := p.attr_group_id
 	mut has_ctdefine := false
 	for p.tok.kind != .rsbr {
 		attr_start_pos := p.tok.pos()
-		attrs := p.parse_attr(is_at)
+		mut attrs := p.parse_attr(is_at)
+		for i, _ in attrs {
+			attrs[i] = ast.Attr{
+				...attrs[i]
+				group_id: group_id
+			}
+		}
 		for attr in attrs {
 			if p.attrs.contains(attr.name) && attr.name != 'wasm_export' {
 				p.error_with_pos('duplicate attribute `${attr.name}`', attr_start_pos.extend(p.prev_tok.pos()))

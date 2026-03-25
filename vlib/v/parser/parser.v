@@ -123,6 +123,7 @@ mut:
 	is_vls_skip_file         bool // in `vls` mode, skip parse and check for unrelated files, such as `vlib`
 	inside_import_section    bool
 	cur_comments             []ast.Comment // comments between other stmts
+	attr_group_id            int
 pub mut:
 	scanner &scanner.Scanner = unsafe { nil }
 	table   &ast.Table       = unsafe { nil }

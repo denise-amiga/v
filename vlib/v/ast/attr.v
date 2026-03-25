@@ -13,18 +13,31 @@ pub enum AttrKind {
 	comptime_define // [if name]
 }
 
+pub struct AttrCallArg {
+pub:
+	name     string
+	has_name bool
+	arg      string
+	kind     AttrKind
+	quote    u8 = `'`
+}
+
 // e.g. `@[unsafe]`
 @[minify]
 pub struct Attr {
 pub:
-	name    string // [name]
-	has_arg bool
-	arg     string // [name: arg]
-	kind    AttrKind
-	quote   u8 = `'` // quote for .string attrs: `"` or `'`
-	ct_opt  bool // true for [if user_defined_name?]
-	pos     token.Pos
-	has_at  bool // new syntax `@[attr]`
+	name        string // [name]
+	has_arg     bool
+	arg         string // [name: arg]
+	kind        AttrKind
+	quote       u8 = `'` // quote for .string attrs: `"` or `'`
+	ct_opt      bool // true for [if user_defined_name?]
+	pos         token.Pos
+	has_at      bool // new syntax `@[attr]`
+	group_id    int
+	is_call     bool
+	is_call_arg bool
+	call_args   []AttrCallArg
 pub mut:
 	ct_expr   Expr // .kind == comptime_define, for [if !name]
 	ct_evaled bool // whether ct_skip has been evaluated already
