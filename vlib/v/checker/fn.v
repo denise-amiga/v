@@ -489,7 +489,7 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 			if node.params.len != 2 {
 				c.error('operator methods should have exactly 1 argument', node.pos)
 			} else {
-				receiver_type := node.receiver.typ
+				receiver_type := node.params[0].typ
 				receiver_sym := c.table.sym(receiver_type)
 
 				param_type := node.params[1].typ
@@ -503,12 +503,12 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					c.error('operator methods are only allowed for struct and type alias',
 						node.pos)
 				} else {
-					parent_sym := c.table.final_sym(node.receiver.typ)
+					parent_sym := c.table.final_sym(node.params[0].typ)
 					if node.rec_mut {
 						c.error('receiver cannot be `mut` for operator overloading', node.receiver_pos)
 					} else if node.params[1].is_mut {
 						c.error('argument cannot be `mut` for operator overloading', node.pos)
-					} else if !c.check_same_type_ignoring_pointers(node.receiver.typ,
+					} else if !c.check_same_type_ignoring_pointers(node.params[0].typ,
 						node.params[1].typ) {
 						c.error('expected `${receiver_sym.name}` not `${param_sym.name}` - both operands must be the same type for operator overloading',
 							node.params[1].type_pos)
