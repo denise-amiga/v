@@ -202,7 +202,7 @@ mut:
 	anon_fns                  shared []string // remove duplicate anon generated functions
 	sumtype_definitions       map[u32]bool    // `_TypeA_to_sumtype_TypeB()` fns that have been generated
 	trace_fn_definitions      []string
-	json_types                []ast.Type // to avoid json gen duplicates
+	json_types                []ast.Type           // to avoid json gen duplicates
 	pcs                       []ProfileCounterMeta // -prof profile counter fn_names => fn counter name
 	hotcode_fn_names          []string
 	hotcode_fpaths            []string
