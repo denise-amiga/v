@@ -90,6 +90,13 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 				if mut v := node.scope.find_var(param.name) {
 					v.typ = typ
 				}
+				// For methods, if the receiver type resolved to a placeholder
+				// (e.g. LinkedList[Any] was never actually instantiated),
+				// skip this generic instantiation entirely.
+				if i == 0 && node.is_method && c.table.sym(typ).kind == .placeholder {
+					node.params = old_params
+					return
+				}
 			}
 		}
 	}
@@ -2599,9 +2606,10 @@ fn (mut c Checker) method_call(mut node ast.CallExpr, mut continue_check &bool) 
 	// previous instantiations may have left stale inferred concrete_types on
 	// inner call AST nodes. Clear them so inference runs fresh.
 	// Only clear inferred types (raw_concrete_types is empty), not explicit ones.
+	// Don't clear when concrete types were derived from the receiver's concrete types.
 	if c.table.cur_concrete_types.len > 0 && method_generic_names_len > 0
 		&& method_generic_names_len == node.concrete_types.len
-		&& node.raw_concrete_types.len == 0 {
+		&& node.raw_concrete_types.len == 0 && rec_concrete_types.len == 0 {
 		node.concrete_types = []
 	}
 	mut concrete_types := node.concrete_types.map(c.unwrap_generic(it))
