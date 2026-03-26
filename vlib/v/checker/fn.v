@@ -76,7 +76,11 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 	mut old_params := []ast.Param{}
 	if node.generic_names.len > 0 && c.table.cur_concrete_types.len == node.generic_names.len
 		&& c.table.cur_concrete_types.all(!it.has_flag(.generic)) {
+		// Clone params so that modifications below do not corrupt the
+		// backing store shared with c.table.fns (which would break
+		// generic type inference for other callers of this function).
 		old_params = node.params.clone()
+		node.params = node.params.clone()
 		for i, param in old_params {
 			if !param.typ.has_flag(.generic) {
 				continue

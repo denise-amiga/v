@@ -4484,7 +4484,7 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 				}
 			}
 		}
-		if node.expr_type == ast.string_type_idx {
+		if node.expr_type == ast.string_type_idx && !c.skip_flags {
 			c.add_error_detail('use ${c.table.type_to_str(node.typ)}.from_string(${node.expr}) instead')
 			c.error('cannot cast `string` to `enum`', node.pos)
 		}
