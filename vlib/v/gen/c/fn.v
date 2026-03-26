@@ -2115,7 +2115,7 @@ fn (mut g Gen) fn_call(node ast.CallExpr) {
 		cur_line := g.go_before_last_stmt()
 		if is_json_encode || is_json_encode_pretty {
 			unwrapped_typ := g.unwrap_generic(node.args[0].typ)
-			g.gen_json_for_type(unwrapped_typ, .encode)
+			g.gen_json_for_type(unwrapped_typ)
 			json_type_str = g.styp(unwrapped_typ)
 			// `json__encode` => `json__encode_User`
 			encode_name := js_enc_name(json_type_str)
@@ -2139,7 +2139,7 @@ fn (mut g Gen) fn_call(node ast.CallExpr) {
 			// `json.decode(User, s)` => json.decode_User(s)
 			typ := c_name(g.styp(ast_type.typ))
 			fn_name := c_fn_name(name) + '_' + typ
-			g.gen_json_for_type(ast_type.typ, .decode)
+			g.gen_json_for_type(ast_type.typ)
 			g.empty_line = true
 			g.writeln('// json.decode')
 			g.write('cJSON* ${json_obj} = json__json_parse(')
