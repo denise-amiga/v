@@ -2595,6 +2595,15 @@ fn (mut c Checker) method_call(mut node ast.CallExpr, mut continue_check &bool) 
 		}
 		else {}
 	}
+	// When inside a generic function being post-processed with concrete types,
+	// previous instantiations may have left stale inferred concrete_types on
+	// inner call AST nodes. Clear them so inference runs fresh.
+	// Only clear inferred types (raw_concrete_types is empty), not explicit ones.
+	if c.table.cur_concrete_types.len > 0 && method_generic_names_len > 0
+		&& method_generic_names_len == node.concrete_types.len
+		&& node.raw_concrete_types.len == 0 {
+		node.concrete_types = []
+	}
 	mut concrete_types := node.concrete_types.map(c.unwrap_generic(it))
 	if concrete_types.len > 0 && c.table.register_fn_concrete_types(method.fkey(), concrete_types) {
 		c.need_recheck_generic_fns = true
