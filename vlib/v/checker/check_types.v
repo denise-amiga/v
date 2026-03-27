@@ -1340,12 +1340,10 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 						typ = if has_concrete_caller_types && cur_param.typ.has_flag(.generic) {
 							if cur_param.is_mut && cur_param.orig_typ != 0
 								&& cur_param.orig_typ.has_flag(.generic) {
-								c.table.unwrap_generic_type(cur_param.orig_typ,
-									c.table.cur_fn.generic_names,
+								c.table.unwrap_generic_type(cur_param.orig_typ, c.table.cur_fn.generic_names,
 									c.table.cur_concrete_types)
 							} else {
-								c.table.unwrap_generic_param_type(cur_param,
-									c.table.cur_fn.generic_names,
+								c.table.unwrap_generic_param_type(cur_param, c.table.cur_fn.generic_names,
 									c.table.cur_concrete_types)
 							}
 						} else {

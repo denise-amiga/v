@@ -2600,8 +2600,8 @@ fn (mut c Checker) method_call(mut node ast.CallExpr, mut continue_check &bool) 
 	// Only clear inferred types (raw_concrete_types is empty), not explicit ones.
 	// Don't clear when concrete types were derived from the receiver's concrete types.
 	if c.table.cur_concrete_types.len > 0 && method_generic_names_len > 0
-		&& method_generic_names_len == node.concrete_types.len
-		&& node.raw_concrete_types.len == 0 && rec_concrete_types.len == 0 {
+		&& method_generic_names_len == node.concrete_types.len && node.raw_concrete_types.len == 0
+		&& rec_concrete_types.len == 0 {
 		node.concrete_types = []
 	}
 	mut concrete_types := node.concrete_types.map(c.unwrap_generic(it))
