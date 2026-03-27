@@ -392,7 +392,8 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					c.error('generic struct `${pure_sym_name}` in fn declaration must specify the generic type names, e.g. ${pure_sym_name}[T]',
 						param.type_pos)
 				}
-				if param.is_mut && arg_typ_sym.info.attrs.any(it.name == 'params') {
+				if old_params.len == 0 && param.is_mut
+				&& arg_typ_sym.info.attrs.any(it.name == 'params') {
 					c.error('declaring a mutable parameter that accepts a struct with the `@[params]` attribute is not allowed',
 						param.type_pos)
 				}
