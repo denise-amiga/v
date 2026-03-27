@@ -355,7 +355,10 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					}
 				}
 			}
-			if !c.ensure_type_exists(param.typ, param.type_pos) {
+			// Skip ensure_type_exists during generic post-processing (old_params.len > 0)
+			// because the concrete types from the caller's module may be private to that
+			// module, and c.mod is set to the generic function's module, not the caller's.
+			if old_params.len == 0 && !c.ensure_type_exists(param.typ, param.type_pos) {
 				return
 			}
 			if reserved_type_names_chk.matches(param.name) {
