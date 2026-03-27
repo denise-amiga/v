@@ -2154,6 +2154,36 @@ pub fn (mut t Table) convert_generic_param_type(param Param, generic_names []str
 	return t.convert_generic_type(param.typ, generic_names, to_types)
 }
 
+// type_contains_placeholder returns true if the given type or any of its inner
+// generic types resolves to a placeholder (i.e., an undefined/unknown type).
+pub fn (t &Table) type_contains_placeholder(typ Type) bool {
+	sym := t.sym(typ)
+	if sym.kind == .placeholder {
+		return true
+	}
+	return match sym.info {
+		Array {
+			t.type_contains_placeholder(sym.info.elem_type)
+		}
+		ArrayFixed {
+			t.type_contains_placeholder(sym.info.elem_type)
+		}
+		Map {
+			t.type_contains_placeholder(sym.info.key_type)
+				|| t.type_contains_placeholder(sym.info.value_type)
+		}
+		SumType {
+			sym.info.concrete_types.any(t.type_contains_placeholder(it))
+		}
+		Struct {
+			sym.info.concrete_types.any(t.type_contains_placeholder(it))
+		}
+		else {
+			false
+		}
+	}
+}
+
 pub fn (mut t Table) unwrap_generic_param_type(param Param, generic_names []string, concrete_types []Type) Type {
 	if param.is_mut && param.orig_typ != 0 && param.orig_typ.has_flag(.generic)
 		&& concrete_types.all(!it.has_flag(.generic)) {

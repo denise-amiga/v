@@ -76,6 +76,11 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 	mut old_params := []ast.Param{}
 	if node.generic_names.len > 0 && c.table.cur_concrete_types.len == node.generic_names.len
 		&& c.table.cur_concrete_types.all(!it.has_flag(.generic)) {
+		// If any concrete type contains a placeholder (e.g. Token was never defined),
+		// skip this instantiation to avoid cascading "unknown type" errors.
+		if c.table.cur_concrete_types.any(c.table.type_contains_placeholder(it)) {
+			return
+		}
 		// Clone params so that modifications below do not corrupt the
 		// backing store shared with c.table.fns (which would break
 		// generic type inference for other callers of this function).

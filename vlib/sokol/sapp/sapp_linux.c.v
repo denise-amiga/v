@@ -280,7 +280,7 @@ $if sokol_wayland ? {
 	fn C.xkb_state_key_get_one_sym(state &C.xkb_state, key u32) Xkb_keysym_t
 	fn C.xkb_state_key_get_utf8(state &C.xkb_state, key u32, buf &char, size usize) int
 	fn C.xkb_state_update_mask(state &C.xkb_state, depressed u32, latched u32, locked u32, dep_group u32, lat_group u32, lock_group u32) int
-	fn C.xkb_state_mod_name_is_active(state &C.xkb_state, name &char, @type, int) int
+	fn C.xkb_state_mod_name_is_active(state &C.xkb_state, name &char, @type int) int
 
 	fn C.xkb_compose_table_new_from_locale(ctx &C.xkb_context, locale &char, flags int) &C.xkb_compose_table
 	fn C.xkb_compose_table_unref(table &C.xkb_compose_table)
@@ -818,7 +818,7 @@ fn C.XSetWMNormalHints(display &C.Display, window Window, hints &C.XSizeHints) i
 fn C.XAllocSizeHints() &C.XSizeHints
 fn C.XGetWindowAttributes(display &C.Display, window Window, attrs &C.XWindowAttributes) int
 fn C.XGetWindowProperty(display &C.Display, window Window, property Atom, long_offset i64, long_length i64, delete int, req_type Atom, actual_type &Atom, actual_format &int, nitems &u64, bytes_after &u64, prop &&&u8) int
-fn C.XChangeProperty(display &C.Display, window Window, property Atom, @type, Atom, format int, mode int, data &u8, nelements int) int
+fn C.XChangeProperty(display &C.Display, window Window, property Atom, @type Atom, format int, mode int, data &u8, nelements int) int
 fn C.Xutf8SetWMProperties(display &C.Display, window Window, window_name &char, icon_name &char, argv &&char, argc int, normal_hints voidptr, wm_hints voidptr, class_hints voidptr)
 fn C.XSetSelectionOwner(display &C.Display, selection Atom, owner Window, time Time)
 fn C.XGetSelectionOwner(display &C.Display, selection Atom) Window
