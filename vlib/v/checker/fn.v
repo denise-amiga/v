@@ -87,9 +87,6 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 			}
 			if typ := c.table.convert_generic_param_type(param, node.generic_names, c.table.cur_concrete_types) {
 				node.params[i].typ = typ
-				if mut v := node.scope.find_var(param.name) {
-					v.typ = typ
-				}
 				// For methods, if the receiver type resolved to a placeholder
 				// (e.g. LinkedList[Any] was never actually instantiated),
 				// skip this generic instantiation entirely.
@@ -119,11 +116,6 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 	defer {
 		if old_params.len > 0 {
 			node.params = old_params
-			for param in old_params {
-				if mut v := node.scope.find_var(param.name) {
-					v.typ = param.typ
-				}
-			}
 		}
 		c.stmt_level = prev_stmt_level
 		c.fn_level--

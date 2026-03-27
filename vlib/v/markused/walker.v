@@ -1129,18 +1129,19 @@ pub fn (mut w Walker) call_expr(mut node ast.CallExpr) {
 		}
 		if ((node.is_method && stmt.params.len > 1) || !node.is_method)
 			&& stmt.generic_names.len > 0 {
-			// mark concrete []T param as used
+			// mark concrete generic param types (e.g. []T, ...Node[T]) as used
 			max_param_len := if node.is_method { stmt.params.len - 1 } else { stmt.params.len }
 			param_i := if node.is_method { 1 } else { 0 }
 			for concrete_type_list in w.table.fn_generic_types[fn_name] {
-				for k, concrete_type in concrete_type_list {
+				for k, _ in concrete_type_list {
 					if k >= max_param_len {
 						break
 					}
 					param_typ := stmt.params[k + param_i].typ
 					if param_typ.has_flag(.generic) {
-						if w.table.type_kind(param_typ) == .array {
-							w.mark_by_type(w.table.find_or_register_array(concrete_type))
+						if resolved := w.table.convert_generic_type(param_typ,
+							stmt.generic_names, concrete_type_list) {
+							w.mark_by_type(resolved)
 						} else if param_typ.has_flag(.option) {
 							w.used_option++
 						}

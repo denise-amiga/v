@@ -1200,7 +1200,7 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 					typ = typ.deref()
 				}
 				if has_concrete_caller_types && param.is_mut && param_infer_typ.nr_muls() == 0
-					&& typ.is_ptr() && c.table.final_sym(typ).kind == .struct {
+					&& typ.is_ptr() && c.table.final_sym(c.unwrap_generic(typ)).kind == .struct {
 					typ = typ.deref()
 				}
 				// resolve &T &&T ...
@@ -1338,8 +1338,16 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 							continue
 						}
 						typ = if has_concrete_caller_types && cur_param.typ.has_flag(.generic) {
-							c.table.unwrap_generic_param_type(cur_param, c.table.cur_fn.generic_names,
-								c.table.cur_concrete_types)
+							if cur_param.is_mut && cur_param.orig_typ != 0
+								&& cur_param.orig_typ.has_flag(.generic) {
+								c.table.unwrap_generic_type(cur_param.orig_typ,
+									c.table.cur_fn.generic_names,
+									c.table.cur_concrete_types)
+							} else {
+								c.table.unwrap_generic_param_type(cur_param,
+									c.table.cur_fn.generic_names,
+									c.table.cur_concrete_types)
+							}
 						} else {
 							cur_param.typ
 						}
