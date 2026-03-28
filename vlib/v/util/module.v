@@ -104,11 +104,7 @@ pub fn qualify_module(pref_ &pref.Preferences, mod string, file_path string) str
 fn mod_path_to_full_name(pref_ &pref.Preferences, mod string, path string) !string {
 	normalized_path := os.real_path(path)
 	normalized_pref_path := os.real_path(pref_.path)
-	normalized_pref_base := if os.is_dir(normalized_pref_path) {
-		normalized_pref_path
-	} else {
-		normalized_pref_path.all_before_last(os.path_separator)
-	}
+	normalized_pref_base := normalized_pref_path.all_before_last(os.path_separator)
 	// TODO: explore using `pref.lookup_path` & `os.vmodules_paths()`
 	// absolute paths instead of 'vlib' & '.vmodules'
 	mut vmod_folders := ['vlib', '.vmodules', 'modules']
