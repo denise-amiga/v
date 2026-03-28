@@ -209,7 +209,7 @@ fn mod_path_to_full_name(pref_ &pref.Preferences, mod string, path string) !stri
 			}
 		}
 	}
-	if os.is_dir(path) {
+	if pref_.path.len > 0 && os.is_dir(path) {
 		real_pref_path_dir := pref_path_to_source_root(pref_)
 		real_path := os.real_path(path)
 		prefix := real_pref_path_dir + os.path_separator
