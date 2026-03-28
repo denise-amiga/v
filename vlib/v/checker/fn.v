@@ -393,7 +393,7 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 						param.type_pos)
 				}
 				if old_params.len == 0 && param.is_mut
-				&& arg_typ_sym.info.attrs.any(it.name == 'params') {
+					&& arg_typ_sym.info.attrs.any(it.name == 'params') {
 					c.error('declaring a mutable parameter that accepts a struct with the `@[params]` attribute is not allowed',
 						param.type_pos)
 				}
