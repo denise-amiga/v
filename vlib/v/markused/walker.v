@@ -1139,8 +1139,8 @@ pub fn (mut w Walker) call_expr(mut node ast.CallExpr) {
 					}
 					param_typ := stmt.params[k + param_i].typ
 					if param_typ.has_flag(.generic) {
-						if resolved := w.table.convert_generic_type(param_typ,
-							stmt.generic_names, concrete_type_list)
+						if resolved := w.table.convert_generic_type(param_typ, stmt.generic_names,
+							concrete_type_list)
 						{
 							w.mark_by_type(resolved)
 						} else if w.table.type_kind(param_typ) == .array {
