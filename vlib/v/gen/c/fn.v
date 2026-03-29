@@ -53,6 +53,9 @@ fn (mut g Gen) fn_decl(node ast.FnDecl) {
 	$if trace_cgen_fn_decl ? {
 		eprintln('>   g.tid: ${g.tid} | g.fid: ${g.fid:3} | g.file.path: ${g.file.path} | fn_decl: ${node.name}')
 	}
+	if node.name.contains('wait') {
+		eprintln('DEBUG fn_decl: ${node.name} | should_be_skipped=${node.should_be_skipped} | ninstances=${node.ninstances} | generic_names.len=${node.generic_names.len}')
+	}
 	if node.should_be_skipped {
 		return
 	}
@@ -108,6 +111,7 @@ fn (mut g Gen) fn_decl(node ast.FnDecl) {
 	g.gen_attrs(node.attrs)
 	mut skip := false
 	pos := g.out.len
+	defs_pos := g.definitions.len
 	should_bundle_module := util.should_bundle_module(node.mod)
 	if g.pref.build_mode == .build_module {
 		// TODO: true for not just "builtin"
@@ -157,6 +161,7 @@ fn (mut g Gen) fn_decl(node ast.FnDecl) {
 	g.fn_decl = keep_fn_decl
 	if skip {
 		g.go_back_to(pos)
+		g.definitions.go_back_to(defs_pos)
 	}
 	if !g.pref.skip_unused {
 		if node.language != .c {
