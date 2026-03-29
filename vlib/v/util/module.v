@@ -20,10 +20,6 @@ fn trace_qualify(callfn string, mod string, file_path string, kind_res string, r
 // qualify_import is used by V's parser, to find the full module name of import statements.
 // Do not use it.
 pub fn qualify_import(pref_ &pref.Preferences, mod string, file_path string) string {
-	if m1 := import_path_to_full_name_from_pref_path(pref_, mod) {
-		trace_qualify(@FN, mod, file_path, 'import_res 0', m1, 'm1 == pref(${mod})')
-		return m1
-	}
 	// comments are from workdir: /v/vls
 	mut mod_paths := pref_.lookup_path.clone()
 	mod_paths << os.vmodules_paths()
@@ -91,48 +87,6 @@ pub fn qualify_module(pref_ &pref.Preferences, mod string, file_path string) str
 	// zzzzzzz >  qualify_module: help | file_path: /v/cleanv/cmd/v/help/help.v   | =>   module_res 4: help          ; ---, clean_file_path: /v/cleanv/cmd/v/help
 	trace_qualify(@FN, mod, file_path, 'module_res 4', mod, '---, clean_file_path: ${clean_file_path}')
 	return mod
-}
-
-fn import_path_to_full_name_from_pref_path(pref_ &pref.Preferences, mod string) !string {
-	mod_path := mod.replace('.', os.path_separator)
-	for root in module_roots_from_pref_path(pref_)! {
-		if os.is_dir(os.join_path(root, mod_path)) {
-			return mod
-		}
-	}
-	return error('module not found')
-}
-
-fn module_roots_from_pref_path(pref_ &pref.Preferences) ![]string {
-	if pref_.path == '' || !os.is_dir(pref_.path) {
-		return error('module not found')
-	}
-	compile_root := os.real_path(pref_.path)
-	if !os.is_dir(compile_root) {
-		return error('module not found')
-	}
-	mut source_root := compile_root
-	src_root := os.join_path(compile_root, 'src')
-	if os.is_dir(src_root) {
-		root_files := os.ls(compile_root) or { []string{} }
-		if pref_.should_compile_filtered_files(compile_root, root_files).len == 0 {
-			source_root = src_root
-		}
-	}
-	mut roots := []string{}
-	for root in [
-		os.join_path(source_root, 'modules'),
-		os.join_path(compile_root, 'modules'),
-		source_root,
-	] {
-		if root !in roots && os.is_dir(root) {
-			roots << root
-		}
-	}
-	if roots.len == 0 {
-		return error('module not found')
-	}
-	return roots
 }
 
 // TODO:
