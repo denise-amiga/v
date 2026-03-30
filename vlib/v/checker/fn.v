@@ -73,38 +73,6 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 		return
 	}
 	node.ninstances++
-	mut old_params := []ast.Param{}
-	if node.generic_names.len > 0 && c.table.cur_concrete_types.len == node.generic_names.len
-		&& c.table.cur_concrete_types.all(!it.has_flag(.generic)) {
-		// If any concrete type contains a placeholder (e.g. Token was never defined),
-		// skip this instantiation to avoid cascading "unknown type" errors.
-		if c.table.cur_concrete_types.any(c.table.type_contains_placeholder(it)) {
-			return
-		}
-		// Clone params so that modifications below do not corrupt the
-		// backing store shared with c.table.fns (which would break
-		// generic type inference for other callers of this function).
-		old_params = node.params.clone()
-		node.params = node.params.clone()
-		for i, param in old_params {
-			if !param.typ.has_flag(.generic) {
-				continue
-			}
-			if typ := c.table.convert_generic_param_type(param, node.generic_names, c.table.cur_concrete_types) {
-				node.params[i].typ = typ
-				if mut v := node.scope.find_var(param.name) {
-					v.typ = typ
-				}
-				// For methods, if the receiver type resolved to a placeholder
-				// (e.g. LinkedList[Any] was never actually instantiated),
-				// skip this generic instantiation entirely.
-				if i == 0 && node.is_method && c.table.sym(typ).kind == .placeholder {
-					node.params = old_params
-					return
-				}
-			}
-		}
-	}
 	// save all the state that fn_decl or inner  statements/expressions
 	// could potentially modify, since functions can be nested, due to
 	// anonymous function support, and ensure that it is restored, when
@@ -122,14 +90,6 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 	c.inside_unsafe = node.is_unsafe
 	c.returns = false
 	defer {
-		if old_params.len > 0 {
-			node.params = old_params
-			for param in old_params {
-				if mut v := node.scope.find_var(param.name) {
-					v.typ = param.typ
-				}
-			}
-		}
 		c.stmt_level = prev_stmt_level
 		c.fn_level--
 		c.returns = prev_returns
@@ -363,10 +323,7 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					}
 				}
 			}
-			// Skip ensure_type_exists during generic post-processing (old_params.len > 0)
-			// because the concrete types from the caller's module may be private to that
-			// module, and c.mod is set to the generic function's module, not the caller's.
-			if old_params.len == 0 && !c.ensure_type_exists(param.typ, param.type_pos) {
+			if !c.ensure_type_exists(param.typ, param.type_pos) {
 				return
 			}
 			if reserved_type_names_chk.matches(param.name) {
@@ -400,8 +357,7 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					c.error('generic struct `${pure_sym_name}` in fn declaration must specify the generic type names, e.g. ${pure_sym_name}[T]',
 						param.type_pos)
 				}
-				if old_params.len == 0 && param.is_mut
-					&& arg_typ_sym.info.attrs.any(it.name == 'params') {
+				if param.is_mut && arg_typ_sym.info.attrs.any(it.name == 'params') {
 					c.error('declaring a mutable parameter that accepts a struct with the `@[params]` attribute is not allowed',
 						param.type_pos)
 				}
@@ -505,7 +461,7 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 			if node.params.len != 2 {
 				c.error('operator methods should have exactly 1 argument', node.pos)
 			} else {
-				receiver_type := node.params[0].typ
+				receiver_type := node.receiver.typ
 				receiver_sym := c.table.sym(receiver_type)
 
 				param_type := node.params[1].typ
@@ -519,12 +475,12 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					c.error('operator methods are only allowed for struct and type alias',
 						node.pos)
 				} else {
-					parent_sym := c.table.final_sym(node.params[0].typ)
+					parent_sym := c.table.final_sym(node.receiver.typ)
 					if node.rec_mut {
 						c.error('receiver cannot be `mut` for operator overloading', node.receiver_pos)
 					} else if node.params[1].is_mut {
 						c.error('argument cannot be `mut` for operator overloading', node.pos)
-					} else if !c.check_same_type_ignoring_pointers(node.params[0].typ,
+					} else if !c.check_same_type_ignoring_pointers(node.receiver.typ,
 						node.params[1].typ) {
 						c.error('expected `${receiver_sym.name}` not `${param_sym.name}` - both operands must be the same type for operator overloading',
 							node.params[1].type_pos)
@@ -2610,16 +2566,6 @@ fn (mut c Checker) method_call(mut node ast.CallExpr, mut continue_check &bool) 
 			}
 		}
 		else {}
-	}
-	// When inside a generic function being post-processed with concrete types,
-	// previous instantiations may have left stale inferred concrete_types on
-	// inner call AST nodes. Clear them so inference runs fresh.
-	// Only clear inferred types (raw_concrete_types is empty), not explicit ones.
-	// Don't clear when concrete types were derived from the receiver's concrete types.
-	if c.table.cur_concrete_types.len > 0 && method_generic_names_len > 0
-		&& method_generic_names_len == node.concrete_types.len && node.raw_concrete_types.len == 0
-		&& rec_concrete_types.len == 0 {
-		node.concrete_types = []
 	}
 	mut concrete_types := node.concrete_types.map(c.unwrap_generic(it))
 	if concrete_types.len > 0 && c.table.register_fn_concrete_types(method.fkey(), concrete_types) {

@@ -53,9 +53,6 @@ fn (mut g Gen) fn_decl(node ast.FnDecl) {
 	$if trace_cgen_fn_decl ? {
 		eprintln('>   g.tid: ${g.tid} | g.fid: ${g.fid:3} | g.file.path: ${g.file.path} | fn_decl: ${node.name}')
 	}
-	if node.name.contains('wait') {
-		eprintln('DEBUG fn_decl: ${node.name} | should_be_skipped=${node.should_be_skipped} | ninstances=${node.ninstances} | generic_names.len=${node.generic_names.len}')
-	}
 	if node.should_be_skipped {
 		return
 	}
@@ -885,7 +882,7 @@ fn (mut g Gen) fn_decl_params(params []ast.Param, scope &ast.Scope, is_variadic 
 			typ = g.table.sym(typ).array_info().elem_type.set_flag(.variadic)
 		}
 		param_type_sym := g.table.sym(typ)
-		if param.is_mut && param.orig_typ != 0 && param.orig_typ.has_flag(.generic) {
+		if param.is_mut && param.orig_typ != 0 && param.orig_typ.has_flag(.generic) && param.typ.has_flag(.generic) {
 			mut surface_typ := g.unwrap_generic(param.orig_typ)
 			typ = if surface_typ.is_ptr() && g.table.sym(surface_typ).kind == .struct {
 				surface_typ.ref()

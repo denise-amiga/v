@@ -4590,6 +4590,15 @@ fn (mut g Gen) selector_expr(node ast.SelectorExpr) {
 					if node.expr is ast.TypeOf {
 						name_type = g.type_resolver.typeof_field_type(g.type_resolver.typeof_type(node.expr.expr,
 							g.resolve_typeof_expr_type(node.expr.expr, name_type)), node.field_name)
+						// For mut params (auto_deref), strip pointer so that
+						// typeof(mut_param).idx == typeof(val_param).idx
+						if node.expr.expr is ast.Ident {
+							if node.expr.expr.obj is ast.Var {
+								if node.expr.expr.obj.is_auto_deref && name_type.is_ptr() {
+									name_type = name_type.deref()
+								}
+							}
+						}
 						g.write(int(name_type).str())
 					} else {
 						g.write(int(g.unwrap_generic(name_type)).str())
