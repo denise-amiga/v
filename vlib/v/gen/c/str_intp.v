@@ -39,7 +39,6 @@ fn (mut g Gen) is_type_name_string_expr(expr ast.Expr) bool {
 	}
 }
 
-
 fn int_ref_interpolates_as_value(expr ast.Expr, typ ast.Type, fmt u8) bool {
 	if fmt == `p` || !(typ.is_int_valptr() || typ.is_float_valptr()) {
 		return false
@@ -319,6 +318,12 @@ fn (mut g Gen) str_val(node ast.StringInterLiteral, i int, fmts []u8) {
 			orig_typ = g.unwrap_generic(g.recheck_concrete_type(resolved_expr_typ))
 		}
 	}
+	// Resolve aggregate types (from multi-branch match arms) to the
+	// concrete variant type for the current iteration.
+	orig_typ_sym := g.table.sym(orig_typ)
+	if orig_typ_sym.info is ast.Aggregate {
+		orig_typ = orig_typ_sym.info.types[g.aggregate_type_idx]
+	}
 	is_int_valptr := int_ref_interpolates_as_value(expr, orig_typ, fmt)
 	typ := if is_int_valptr { orig_typ.deref() } else { orig_typ }
 	typ_sym := g.table.sym(typ)
@@ -518,6 +523,10 @@ fn (mut g Gen) string_inter_literal(node ast.StringInterLiteral) {
 				}
 			}
 			if ctyp != ast.void_type {
+				// Clear option flag for variables unwrapped via `or {}` blocks
+				if ctyp.has_flag(.option) && g.should_clear_option_flag(expr) {
+					ctyp = ctyp.clear_flag(.option)
+				}
 				node_.expr_types[i] = ctyp
 				if node_.fmts[i] == `_`
 					|| (g.cur_fn != unsafe { nil } && g.cur_concrete_types.len > 0) {
@@ -536,6 +545,16 @@ fn (mut g Gen) string_inter_literal(node ast.StringInterLiteral) {
 				if resolved_field_typ != ast.void_type {
 					field_typ = g.unwrap_generic(g.recheck_concrete_type(resolved_field_typ))
 				}
+			}
+			// Resolve aggregate types (from multi-branch match arms) to the
+			// concrete variant type for the current iteration.
+			field_sym := g.table.sym(field_typ)
+			if field_sym.info is ast.Aggregate {
+				field_typ = field_sym.info.types[g.aggregate_type_idx]
+			}
+			// Clear option flag for variables unwrapped via `or {}` blocks
+			if field_typ.has_flag(.option) && g.should_clear_option_flag(expr) {
+				field_typ = field_typ.clear_flag(.option)
 			}
 			if i >= node_.expr_types.len {
 				node_.expr_types << field_typ
