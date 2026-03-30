@@ -882,7 +882,8 @@ fn (mut g Gen) fn_decl_params(params []ast.Param, scope &ast.Scope, is_variadic 
 			typ = g.table.sym(typ).array_info().elem_type.set_flag(.variadic)
 		}
 		param_type_sym := g.table.sym(typ)
-		if param.is_mut && param.orig_typ != 0 && param.orig_typ.has_flag(.generic) && param.typ.has_flag(.generic) {
+		if param.is_mut && param.orig_typ != 0 && param.orig_typ.has_flag(.generic)
+			&& param.typ.has_flag(.generic) {
 			mut surface_typ := g.unwrap_generic(param.orig_typ)
 			typ = if surface_typ.is_ptr() && g.table.sym(surface_typ).kind == .struct {
 				surface_typ.ref()
@@ -2101,7 +2102,7 @@ fn (mut g Gen) fn_call(node ast.CallExpr) {
 			}
 		}
 	}
-	is_print := node.kind in [.print, .println, .eprint, .eprintln, .panic]
+	mut is_print := !is_selector_call && node.kind in [.print, .println, .eprint, .eprintln, .panic]
 	print_method := name
 	is_json_encode := node.kind == .json_encode
 	is_json_encode_pretty := node.kind == .json_encode_pretty
@@ -2205,6 +2206,9 @@ fn (mut g Gen) fn_call(node ast.CallExpr) {
 			if func.mod == 'builtin' && !name.starts_with('builtin__') && node.language != .c {
 				name = 'builtin__${name}'
 			}
+			is_print = is_print && func.mod == 'builtin'
+		} else {
+			is_print = false
 		}
 	}
 	if node.is_fn_a_const {

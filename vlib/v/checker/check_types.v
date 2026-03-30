@@ -1204,8 +1204,11 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 					typ = typ.deref()
 				}
 				// resolve &T &&T ...
-				if param_infer_typ.nr_muls() > 0 && typ.nr_muls() > 0 {
-					param_muls := param_infer_typ.nr_muls()
+				// Use param.typ (not param_infer_typ) to get the actual pointer
+				// count including mut lowering, so that e.g. `mut val T` with
+				// param.typ=&T correctly strips the pointer from the arg type.
+				if param.typ.nr_muls() > 0 && typ.nr_muls() > 0 {
+					param_muls := param.typ.nr_muls()
 					arg_muls := typ.nr_muls()
 					typ = if arg_muls >= param_muls {
 						typ.set_nr_muls(arg_muls - param_muls)

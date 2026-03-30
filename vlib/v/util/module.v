@@ -34,8 +34,14 @@ pub fn qualify_import(pref_ &pref.Preferences, mod string, file_path string) str
 			}
 		}
 	}
-	if m1 := mod_path_to_full_name(pref_, mod, file_path) {
-		trace_qualify(@FN, mod, file_path, 'import_res 2', m1, file_path)
+	// Use absolute file_path so mod_path_to_full_name can walk up to find v.mod
+	abs_file_path := if os.is_abs_path(file_path) {
+		file_path
+	} else {
+		os.join_path_single(os.getwd(), file_path)
+	}
+	if m1 := mod_path_to_full_name(pref_, mod, abs_file_path) {
+		trace_qualify(@FN, mod, file_path, 'import_res 2', m1, abs_file_path)
 		// >  qualify_module: analyzer           | file_path: /v/vls/analyzer/store.v  | =>   module_res 2: analyzer           ; clean_file_path - getwd == mod
 		// >  qualify_import: analyzer.depgraph  | file_path: /v/vls/analyzer/store.v  | =>   import_res 2: analyzer.depgraph  ; /v/vls/analyzer/store.v
 		// >  qualify_import: tree_sitter        | file_path: /v/vls/analyzer/store.v  | =>   import_res 2: tree_sitter        ; /v/vls/analyzer/store.v
