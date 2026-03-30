@@ -2796,8 +2796,8 @@ pub fn (mut t Table) generic_insts_to_concrete() {
 							}
 						}
 						if param.orig_typ.has_flag(.generic) {
-							if t_typ := t.convert_generic_type(param.orig_typ,
-								function.generic_names, info.concrete_types)
+							if t_typ := t.convert_generic_type(param.orig_typ, function.generic_names,
+								info.concrete_types)
 							{
 								param.orig_typ = t_typ
 							}

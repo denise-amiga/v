@@ -1,3 +1,4 @@
+// vfmt off
 fn test_stub() {
 	$if !new_veb ? {
 		return
