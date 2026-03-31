@@ -158,7 +158,9 @@ fn (mut g Gen) fn_decl(node ast.FnDecl) {
 	g.fn_decl = keep_fn_decl
 	if skip {
 		g.go_back_to(pos)
-		g.definitions.go_back_to(defs_pos)
+		if g.pref.build_mode != .build_module && !g.pref.use_cache {
+			g.definitions.go_back_to(defs_pos)
+		}
 	}
 	if !g.pref.skip_unused {
 		if node.language != .c {
