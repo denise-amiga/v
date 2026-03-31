@@ -52,6 +52,35 @@ fn test_cross_compile_keeps_explicit_cc() {
 	assert second.ccompiler == custom_cc
 }
 
+fn test_cross_compile_defaults_windows_to_the_cross_compiler_arch() {
+	if pref.get_host_os() == .windows {
+		return
+	}
+	target := os.join_path(vroot, 'examples', 'hello_world.v')
+	prefs, _ := pref.parse_args_and_show_errors([], ['', '-os', 'windows', target], false)
+	assert prefs.arch == .amd64
+	assert prefs.ccompiler == 'x86_64-w64-mingw32-gcc'
+}
+
+fn test_cross_compile_infers_android_arch_from_vcross_compiler_name() {
+	target := os.join_path(vroot, 'examples', 'hello_world.v')
+	old_cross_compiler := os.getenv('VCROSS_COMPILER_NAME')
+	defer {
+		os.setenv('VCROSS_COMPILER_NAME', old_cross_compiler, true)
+	}
+	for compiler_name, expected_arch in {
+		'aarch64-linux-android21-clang':    pref.Arch.arm64
+		'armv7a-linux-androideabi21-clang': pref.Arch.arm32
+		'i686-linux-android21-clang':       pref.Arch.i386
+		'x86_64-linux-android21-clang':     pref.Arch.amd64
+	} {
+		os.setenv('VCROSS_COMPILER_NAME', compiler_name, true)
+		prefs, _ := pref.parse_args_and_show_errors([], ['', '-os', 'android', target], false)
+		assert prefs.arch == expected_arch
+		assert prefs.ccompiler == compiler_name
+	}
+}
+
 fn test_musl_defaults_to_no_gc() {
 	target := os.join_path(vroot, 'examples', 'hello_world.v')
 	prefs, _ := pref.parse_args_and_show_errors([], ['', '-musl', target], false)
