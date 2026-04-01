@@ -1841,9 +1841,7 @@ pub fn (mut g Gen) write_typedef_types() {
 				if elem_sym.kind != .struct && elem_sym.is_builtin() {
 					styp := sym.cname
 					len := info.size
-					if len == 0 {
-						g.type_definitions.writeln('typedef ${g.styp(info.elem_type)} ${styp} [0];')
-					} else if len > 0 {
+					if len > 0 {
 						mut fixed := g.styp(info.elem_type)
 						if elem_sym.info is ast.FnType {
 							pos := g.out.len
@@ -7514,9 +7512,7 @@ fn (mut g Gen) write_types(symbols []&ast.TypeSymbol) {
 						fixed_elem_name += '*'.repeat(sym.info.elem_type.nr_muls())
 					}
 					len := sym.info.size
-					if len == 0 {
-						g.type_definitions.writeln('typedef ${fixed_elem_name} ${styp} [0];')
-					} else if len > 0 {
+					if len > 0 {
 						if elem_sym.info is ast.FnType {
 							pos := g.out.len
 							g.write_fn_ptr_decl(&elem_sym.info, '')
