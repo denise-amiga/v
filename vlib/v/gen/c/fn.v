@@ -764,7 +764,8 @@ fn (mut g Gen) gen_fn_decl(node &ast.FnDecl, skip bool) {
 			generic_names: effective_generic_names.clone()
 		}
 	}
-	if node.generic_names.len == 0 && g.cur_concrete_types.len == 0 {
+	if node.generic_names.len == 0 && g.cur_concrete_types.len == 0
+		&& (!node.is_method || node.receiver.typ.has_flag(.generic)) {
 		recovered_generic_names, recovered_concrete_types := g.recover_specialized_generic_context_for(node.name)
 		if recovered_generic_names.len > 0
 			&& recovered_generic_names.len == recovered_concrete_types.len {
