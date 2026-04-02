@@ -116,6 +116,9 @@ fn (mut c Checker) markused_call_expr(left_type ast.Type, mut node ast.CallExpr)
 fn (mut c Checker) markused_print_call(mut node ast.CallExpr) {
 	if !c.is_builtin_mod && c.mod != 'math.bits' && node.args[0].expr !is ast.StringLiteral {
 		arg_typ := c.unwrap_generic(node.args[0].typ)
+		if arg_typ == 0 {
+			return
+		}
 		if (node.args[0].expr is ast.CallExpr && node.args[0].expr.is_method
 			&& node.args[0].expr.name == 'str')
 			|| !c.table.sym(arg_typ).has_method('str') {

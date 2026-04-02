@@ -684,7 +684,13 @@ fn (mut c Checker) struct_init(mut node ast.StructInit, is_field_zero_struct_ini
 	is_generic_zero_struct_init := original_node_typ.has_flag(.generic) && node.init_fields.len == 0
 		&& !node.has_update_expr
 	if is_generic_zero_struct_init {
-		return concrete_node_typ
+		// Don't early-return for single-letter types (like F{}) in non-generic functions —
+		// these are unknown structs that should be caught by ensure_type_exists below.
+		is_unknown_single_letter := type_sym.kind == .any && type_sym.name.len == 1
+			&& (c.table.cur_fn == unsafe { nil } || type_sym.name !in c.table.cur_fn.generic_names)
+		if !is_unknown_single_letter {
+			return concrete_node_typ
+		}
 	}
 	if !is_field_zero_struct_init {
 		c.ensure_type_exists(concrete_node_typ, node.pos)

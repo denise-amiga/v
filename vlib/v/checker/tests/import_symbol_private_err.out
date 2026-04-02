@@ -1,3 +1,10 @@
+vlib/v/util/diff.v:6:1: warning: @[deprecated_after] is only valid, in the presence of a `@[deprecated]` attribute
+    4 | 
+    5 | // find_working_diff_command returns the first available command from a list of known diff cli tools.
+    6 | @[deprecated_after: '2024-06-30']
+      | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    7 | @[deprecated]
+    8 | pub fn find_working_diff_command() !string {
 vlib/v/checker/tests/import_symbol_private_err.vv:13:6: notice: interface field `io.ReaderWriterImpl.r` must be initialized
    11 |         'h': 2
    12 |     }.exists('h')

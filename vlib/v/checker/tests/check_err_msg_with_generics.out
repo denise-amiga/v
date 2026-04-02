@@ -175,6 +175,14 @@ Did you mean `Ok[[]Token]`?
       |                                 ^
   176 | }
   177 |
+vlib/datatypes/bstree.v:185:18: error: unknown type `Token`.
+Did you mean `Ok[[]Token]`?
+  183 | // in_order_traversal traverses the BST in order, and returns the result as an array.
+  184 | pub fn (bst &BSTree[T]) in_order_traversal() []T {
+  185 |     mut result := []T{}
+      |                     ^
+  186 |     bst.in_order_traversal_helper(bst.root, mut result)
+  187 |     return result
 vlib/datatypes/bstree.v:186:31: error: unknown type `Token`.
 Did you mean `Ok[[]Token]`?
   184 | pub fn (bst &BSTree[T]) in_order_traversal() []T {
@@ -199,6 +207,14 @@ Did you mean `Ok[[]Token]`?
       |                                  ^
   198 | }
   199 |
+vlib/datatypes/bstree.v:202:18: error: unknown type `Token`.
+Did you mean `Ok[[]Token]`?
+  200 | // post_order_traversal traverses the BST in post order, and returns the result in an array.
+  201 | pub fn (bst &BSTree[T]) post_order_traversal() []T {
+  202 |     mut result := []T{}
+      |                     ^
+  203 |     bst.post_order_traversal_helper(bst.root, mut result)
+  204 |     return result
 vlib/datatypes/bstree.v:203:33: error: unknown type `Token`.
 Did you mean `Ok[[]Token]`?
   201 | pub fn (bst &BSTree[T]) post_order_traversal() []T {
@@ -223,6 +239,14 @@ Did you mean `Ok[[]Token]`?
       |                                    ^
   216 |     result << node.value
   217 | }
+vlib/datatypes/bstree.v:221:18: error: unknown type `Token`.
+Did you mean `Ok[[]Token]`?
+  219 | // pre_order_traversal traverses the BST in pre order, and returns the result as an array.
+  220 | pub fn (bst &BSTree[T]) pre_order_traversal() []T {
+  221 |     mut result := []T{}
+      |                     ^
+  222 |     bst.pre_order_traversal_helper(bst.root, mut result)
+  223 |     return result
 vlib/datatypes/bstree.v:222:32: error: unknown type `Token`.
 Did you mean `Ok[[]Token]`?
   220 | pub fn (bst &BSTree[T]) pre_order_traversal() []T {
