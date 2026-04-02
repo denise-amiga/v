@@ -2322,7 +2322,8 @@ fn (mut g Gen) resolve_return_type(node ast.CallExpr) ast.Type {
 									&& resolved.is_ptr() {
 									resolved = resolved.deref()
 								}
-								if resolved != 0 && resolved != ast.void_type && resolved != current_type {
+								if resolved != 0 && resolved != ast.void_type
+									&& resolved != current_type {
 									concrete_types[slot] = resolved
 								}
 							}

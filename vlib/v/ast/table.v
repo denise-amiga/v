@@ -59,7 +59,7 @@ pub fn (mut uf UsedFeatures) free() {
 @[heap; minify]
 pub struct Table {
 mut:
-	parsing_type                 string         // name of the type to enable recursive type parsing
+	parsing_type string // name of the type to enable recursive type parsing
 pub mut:
 	type_symbols       []&TypeSymbol
 	type_idxs          map[string]int
@@ -3216,8 +3216,8 @@ fn (mut t Table) unwrap_generic_type_ex_with_depth(typ Type, generic_names []str
 			fields = ts.info.fields.clone()
 			for i in 0 .. fields.len {
 				orig_type := fields[i].typ
-				resolved_field_typ := t.unwrap_generic_type_ex_with_depth(orig_type,
-					t_generic_names, t_concrete_types, recheck_concrete_types, new_depth_guard)
+				resolved_field_typ := t.unwrap_generic_type_ex_with_depth(orig_type, t_generic_names,
+					t_concrete_types, recheck_concrete_types, new_depth_guard)
 				if resolved_field_typ != orig_type {
 					fields[i].typ = resolved_field_typ
 					// Update type in `info.embeds`, if it's embed
