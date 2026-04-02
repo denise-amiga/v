@@ -424,13 +424,7 @@ pub fn (ctx &Context) get_value[T](key context.Key) ?T {
 	if val := ctx.ctx.value(key) {
 		match val {
 			T {
-				// `context.value()` always returns a reference
-				// if we send back `val` the returntype becomes `?&T` and this can be problematic
-				// for end users since they won't be able to do something like
-				// `app.get_value[string]('a') or { '' }
-				// since V expects the value in the or block to be of type `&string`.
-				// And if a reference was allowed it would enable mutating the context directly
-				return *val
+				return val
 			}
 			else {}
 		}
@@ -649,8 +643,8 @@ fn new_request_app[T](global_app &T, ctx Context, tid int) &T {
 		if field.is_shared {
 			unsafe {
 				// TODO: remove this horrible hack, when copying a shared field at comptime works properly!!!
-				raptr := &voidptr(&request_app.$(field.name))
-				gaptr := &voidptr(&global_app.$(field.name))
+				raptr := &voidptr(voidptr(&request_app.$(field.name)))
+				gaptr := &voidptr(voidptr(&global_app.$(field.name)))
 				*raptr = *gaptr
 				_ = raptr // TODO: v produces a warning that `raptr` is unused otherwise, even though it was on the previous line
 			}

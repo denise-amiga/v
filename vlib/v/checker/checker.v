@@ -4610,7 +4610,8 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 	} else if mut to_sym.info is ast.Alias && !(final_to_sym.kind == .struct && final_to_is_ptr) {
 		if (!c.check_types(from_type, to_sym.info.parent_type) && !(final_to_sym.is_int()
 			&& final_from_sym.kind in [.enum, .bool, .i8, .u8, .char, .rune])
-			&& !(final_to_sym.is_number() && final_from_sym.is_number()))
+			&& !(final_to_sym.is_number() && final_from_sym.is_number())
+			&& !(final_to_sym.kind == .enum && final_from_sym.is_int()))
 			|| (final_to_sym.kind == .struct
 			&& from_type.idx() in [ast.voidptr_type_idx, ast.nil_type_idx]) {
 			ft := c.table.type_to_str(from_type)

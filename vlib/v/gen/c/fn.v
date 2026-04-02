@@ -765,7 +765,8 @@ fn (mut g Gen) gen_fn_decl(node &ast.FnDecl, skip bool) {
 		}
 	}
 	if node.generic_names.len == 0 && g.cur_concrete_types.len == 0
-		&& (!node.is_method || node.receiver.typ.has_flag(.generic)) {
+		&& (!node.is_method || node.receiver.typ.has_flag(.generic)
+		|| node.name.contains('_T_')) {
 		recovered_generic_names, recovered_concrete_types := g.recover_specialized_generic_context_for(node.name)
 		if recovered_generic_names.len > 0
 			&& recovered_generic_names.len == recovered_concrete_types.len {
@@ -2311,6 +2312,20 @@ fn (mut g Gen) resolve_return_type(node ast.CallExpr) ast.Type {
 						if current_type != 0 && current_type != ast.void_type
 							&& !current_type.has_flag(.generic)
 							&& !g.type_has_unresolved_generic_parts(current_type) {
+							// When the arg is a generic_param variable, the checker's concrete type
+							// may be stale (from a different instantiation). Re-resolve from
+							// g.cur_concrete_types and override if different.
+							if arg.expr is ast.Ident && arg.expr.obj is ast.Var
+								&& (arg.expr.obj as ast.Var).ct_type_var == .generic_param {
+								mut resolved := g.resolve_current_fn_generic_param_type(arg.expr.name)
+								if (arg.is_mut || (arg.expr.obj as ast.Var).is_mut)
+									&& resolved.is_ptr() {
+									resolved = resolved.deref()
+								}
+								if resolved != 0 && resolved != ast.void_type && resolved != current_type {
+									concrete_types[slot] = resolved
+								}
+							}
 							continue
 						}
 					}
@@ -5853,6 +5868,15 @@ fn (mut g Gen) ref_or_deref_arg(arg ast.CallArg, expected_type_ ast.Type, lang a
 				g.write(')')
 				return
 			}
+		} else if arg.expr.kind == .constant && arg_typ.is_ptr()
+			&& !expected_type.is_any_kind_of_pointer()
+			&& g.unwrap_generic(g.recheck_concrete_type(expected_type)).idx() == arg_typ.deref().idx() {
+			// Const declared with `&` (e.g. `const x = &Foo{}`) is stored as a pointer in C,
+			// but when passed to a function expecting a value parameter, it must be dereferenced.
+			g.write('(*')
+			g.expr(ast.Expr(arg.expr))
+			g.write(')')
+			return
 		}
 	}
 	// check if the argument must be dereferenced or not

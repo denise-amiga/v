@@ -759,12 +759,21 @@ fn (mut g Gen) pop_comptime_info() {
 }
 
 fn (mut g Gen) comptime_for(node ast.ComptimeFor) {
-	for_typ := if node.expr !is ast.EmptyExpr {
+	resolved_typ := if node.expr !is ast.EmptyExpr {
 		g.unwrap_generic(g.recheck_concrete_type(g.resolved_expr_type(node.expr, node.typ)))
 	} else if node.typ != g.field_data_type {
 		g.unwrap_generic(node.typ)
 	} else {
 		g.comptime.comptime_for_field_type
+	}
+	// When the resolved type is FieldData, the expression refers to a comptime
+	// field variable (e.g. `$for f3 in f.fields` where `f` comes from an outer
+	// `$for f in T.fields`). In that case use the actual field type from the
+	// outer comptime loop instead of the FieldData descriptor type.
+	for_typ := if resolved_typ == g.field_data_type {
+		g.comptime.comptime_for_field_type
+	} else {
+		resolved_typ
 	}
 	sym := g.table.final_sym(for_typ)
 	iter_sym_name := if node.kind == .methods { g.table.sym(for_typ).name } else { sym.name }

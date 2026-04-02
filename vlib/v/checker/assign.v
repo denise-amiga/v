@@ -676,7 +676,8 @@ or use an explicit `unsafe{ a[..] }`, if you do not want a copy of the slice.',
 				}
 			}
 		}
-		if left_sym.kind == .map && is_assign && right_sym.kind == .map && !left.is_blank_ident()
+		if left_sym.kind == .map && is_assign && right_sym.kind == .map && !c.inside_unsafe
+			&& !left.is_blank_ident()
 			&& right.is_lvalue() && right !is ast.ComptimeSelector
 			&& (!right_type.is_ptr() || (right is ast.Ident && right.is_auto_deref_var())) {
 			// Do not allow `a = b`
