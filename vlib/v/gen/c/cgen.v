@@ -2005,7 +2005,33 @@ static inline ${option_name}_void __Option_${styp}_pushval(${styp} ch, ${el_type
 
 // cc_type whether to prefix 'struct' or not (C__Foo -> struct Foo)
 fn (mut g Gen) cc_type(typ ast.Type, is_prefix_struct bool) string {
-	sym := g.table.sym(g.unwrap_generic(typ))
+	mut resolved_typ := g.unwrap_generic(typ)
+	// For generic_inst types with aliased concrete types, resolve to the unaliased
+	// version so that e.g. MiddlewareOptions[AliasContext] uses the same C type as
+	// MiddlewareOptions[Context].
+	rsym := g.table.sym(resolved_typ)
+	if rsym.kind == .generic_inst {
+		info := rsym.info as ast.GenericInst
+		mut has_alias := false
+		mut unaliased_cts := info.concrete_types.clone()
+		for i, ct in info.concrete_types {
+			ua := g.table.unaliased_type(ct)
+			if ua != ct {
+				unaliased_cts[i] = ua.derive_add_muls(ct)
+				has_alias = true
+			}
+		}
+		if has_alias {
+			// see comment at top of vlib/v/gen/c/utils.v
+			mut muttable := unsafe { &ast.Table(g.table) }
+			idx := muttable.find_or_register_generic_inst(ast.new_type(info.parent_idx),
+				unaliased_cts)
+			if idx > 0 {
+				resolved_typ = ast.new_type(idx).derive_add_muls(resolved_typ)
+			}
+		}
+	}
+	sym := g.table.sym(resolved_typ)
 	if g.pref.no_preludes {
 		match sym.kind {
 			.voidptr {

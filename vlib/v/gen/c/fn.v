@@ -3377,7 +3377,7 @@ fn (mut g Gen) unwrap_receiver_type(node ast.CallExpr) (ast.Type, &ast.TypeSymbo
 	// In generic contexts, node.from_embed_types and node.receiver_type may be stale
 	// from a previous instantiation. Re-resolve embedded methods from the actual left_type.
 	if g.cur_fn != unsafe { nil } && g.cur_concrete_types.len > 0 {
-		left_sym2 := g.table.sym(left_type)
+		left_sym2 := g.table.final_sym(left_type)
 		if !left_sym2.has_method(node.name) {
 			_, embed_types := g.table.find_method_from_embeds(left_sym2, node.name) or {
 				ast.Fn{}, []ast.Type{}
