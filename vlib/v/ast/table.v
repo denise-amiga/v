@@ -60,7 +60,6 @@ pub fn (mut uf UsedFeatures) free() {
 pub struct Table {
 mut:
 	parsing_type                 string         // name of the type to enable recursive type parsing
-	unwrap_generic_type_in_depth map[string]int // guards against recursive generic unwrapping loops
 pub mut:
 	type_symbols       []&TypeSymbol
 	type_idxs          map[string]int
@@ -139,7 +138,6 @@ pub fn (mut t Table) free() {
 		t.fn_generic_types.free()
 		t.cmod_prefix.free()
 		t.used_features.free()
-		t.unwrap_generic_type_in_depth.free()
 	}
 }
 
@@ -3012,10 +3010,16 @@ pub fn (mut t Table) unwrap_generic_type(typ Type, generic_names []string, concr
 
 // unwrap_generic_type_ex resolves generic symbols to concrete types and can recheck nested concrete fields.
 pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, concrete_types []Type, recheck_concrete_types bool) Type {
+	return t.unwrap_generic_type_ex_with_depth(typ, generic_names, concrete_types, recheck_concrete_types,
+		[]string{})
+}
+
+fn (mut t Table) unwrap_generic_type_ex_with_depth(typ Type, generic_names []string, concrete_types []Type, recheck_concrete_types bool, depth_guard []string) Type {
 	mut final_concrete_types := []Type{}
 	mut fields := []StructField{}
 	mut nrt := ''
 	mut c_nrt := ''
+	mut new_depth_guard := depth_guard.clone()
 	type_idx := typ.idx()
 	if type_idx == 0 || type_idx >= t.type_symbols.len {
 		return typ
@@ -3029,8 +3033,8 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 	match ts.info {
 		Array {
 			dims, elem_type := t.get_array_dims(ts.info)
-			unwrap_typ := t.unwrap_generic_type_ex(elem_type, generic_names, concrete_types,
-				recheck_concrete_types)
+			unwrap_typ := t.unwrap_generic_type_ex_with_depth(elem_type, generic_names,
+				concrete_types, recheck_concrete_types, depth_guard)
 			idx := t.find_or_register_array_with_dims(unwrap_typ, dims)
 			if idx <= 0 {
 				return typ
@@ -3038,8 +3042,8 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 			return new_type(idx).derive_add_muls(typ).clear_flag(.generic)
 		}
 		ArrayFixed {
-			unwrap_typ := t.unwrap_generic_type_ex(ts.info.elem_type, generic_names, concrete_types,
-				recheck_concrete_types)
+			unwrap_typ := t.unwrap_generic_type_ex_with_depth(ts.info.elem_type, generic_names,
+				concrete_types, recheck_concrete_types, depth_guard)
 			idx := t.find_or_register_array_fixed(unwrap_typ, ts.info.size, None{}, false)
 			if idx <= 0 {
 				return typ
@@ -3055,8 +3059,8 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 			return new_type(idx).derive_add_muls(typ).clear_flag(.generic)
 		}
 		Thread {
-			unwrap_typ := t.unwrap_generic_type_ex(ts.info.return_type, generic_names,
-				concrete_types, recheck_concrete_types)
+			unwrap_typ := t.unwrap_generic_type_ex_with_depth(ts.info.return_type, generic_names,
+				concrete_types, recheck_concrete_types, depth_guard)
 			idx := t.find_or_register_thread(unwrap_typ)
 			if idx <= 0 {
 				return typ
@@ -3064,10 +3068,10 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 			return new_type(idx).derive_add_muls(typ).clear_flag(.generic)
 		}
 		Map {
-			unwrap_key_type := t.unwrap_generic_type_ex(ts.info.key_type, generic_names,
-				concrete_types, recheck_concrete_types)
-			unwrap_value_type := t.unwrap_generic_type_ex(ts.info.value_type, generic_names,
-				concrete_types, recheck_concrete_types)
+			unwrap_key_type := t.unwrap_generic_type_ex_with_depth(ts.info.key_type, generic_names,
+				concrete_types, recheck_concrete_types, depth_guard)
+			unwrap_value_type := t.unwrap_generic_type_ex_with_depth(ts.info.value_type,
+				generic_names, concrete_types, recheck_concrete_types, depth_guard)
 			idx := t.find_or_register_map(unwrap_key_type, unwrap_value_type)
 			if idx <= 0 {
 				return typ
@@ -3090,8 +3094,8 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 				}
 			}
 			if unwrapped_fn.return_type.has_flag(.generic) {
-				unwrapped_fn.return_type = t.unwrap_generic_type_ex(unwrapped_fn.return_type,
-					generic_names, concrete_types, recheck_concrete_types)
+				unwrapped_fn.return_type = t.unwrap_generic_type_ex_with_depth(unwrapped_fn.return_type,
+					generic_names, concrete_types, recheck_concrete_types, depth_guard)
 				has_generic = true
 			}
 			if has_generic {
@@ -3159,20 +3163,20 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 				if recheck_concrete_types {
 					// Rechecking an already-registered concrete generic can revisit the same
 					// self-referential type through one of its fields.
-					if nrt in t.unwrap_generic_type_in_depth {
+					if nrt in depth_guard {
 						if idx <= 0 {
 							return typ
 						}
 						return new_type(idx).derive(typ).clear_flag(.generic)
 					}
-					t.unwrap_generic_type_in_depth[nrt] = 1
-					defer {
-						t.unwrap_generic_type_in_depth.delete(nrt)
-					}
+					new_depth_guard = []string{cap: depth_guard.len + 1}
+					new_depth_guard << depth_guard
+					new_depth_guard << nrt
 					fields = ts.info.fields.clone()
 					for i in 0 .. fields.len {
-						resolved_field_typ := t.unwrap_generic_type_ex(fields[i].typ,
-							t_generic_names, t_concrete_types, recheck_concrete_types)
+						resolved_field_typ := t.unwrap_generic_type_ex_with_depth(fields[i].typ,
+							t_generic_names, t_concrete_types, recheck_concrete_types,
+							new_depth_guard)
 						if resolved_field_typ != fields[i].typ {
 							fields[i].typ = resolved_field_typ
 						}
@@ -3197,7 +3201,7 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 			if idx == 0 {
 				idx = t.add_placeholder_type(nrt, c_nrt, .v)
 			}
-			if nrt in t.unwrap_generic_type_in_depth {
+			if nrt in depth_guard {
 				// The concrete type is currently being built higher in the stack.
 				// Reuse its placeholder to avoid recursive generic unwrapping loops.
 				if idx <= 0 {
@@ -3205,16 +3209,15 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 				}
 				return new_type(idx).derive(typ).clear_flag(.generic)
 			}
-			t.unwrap_generic_type_in_depth[nrt] = 1
-			defer {
-				t.unwrap_generic_type_in_depth.delete(nrt)
-			}
+			new_depth_guard = []string{cap: depth_guard.len + 1}
+			new_depth_guard << depth_guard
+			new_depth_guard << nrt
 			// fields type translate to concrete type
 			fields = ts.info.fields.clone()
 			for i in 0 .. fields.len {
 				orig_type := fields[i].typ
-				resolved_field_typ := t.unwrap_generic_type_ex(orig_type, t_generic_names,
-					t_concrete_types, recheck_concrete_types)
+				resolved_field_typ := t.unwrap_generic_type_ex_with_depth(orig_type,
+					t_generic_names, t_concrete_types, recheck_concrete_types, new_depth_guard)
 				if resolved_field_typ != orig_type {
 					fields[i].typ = resolved_field_typ
 					// Update type in `info.embeds`, if it's embed
@@ -3290,7 +3293,8 @@ pub fn (mut t Table) unwrap_generic_type_ex(typ Type, generic_names []string, co
 				if variants[i].has_flag(.generic) || sym.kind == .generic_inst
 					|| (sym.kind in [.struct, .sum_type, .interface] && sym.has_generic_type_info()) {
 					if sym.kind in [.struct, .sum_type, .interface] {
-						variants[i] = t.unwrap_generic_type(variants[i], gn_names, final_concrete_types)
+						variants[i] = t.unwrap_generic_type_ex_with_depth(variants[i],
+							gn_names, final_concrete_types, false, new_depth_guard)
 					} else {
 						if t_typ := t.convert_generic_type(variants[i], gn_names, final_concrete_types) {
 							variants[i] = t_typ
