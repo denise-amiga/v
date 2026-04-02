@@ -581,10 +581,10 @@ fn (mut g Gen) array_init_with_fields(node ast.ArrayInit, elem_type Type, is_amp
 				// `T{}` stays expression-safe for struct field defaults that expand
 				// to statement-based array/map initialization.
 				g.struct_init(ast.StructInit{
-					typ: node.elem_type
+					typ: elem_type.typ
 				})
 			} else {
-				g.write(g.type_default(node.elem_type))
+				g.write(g.type_default(elem_type.typ))
 			}
 		}
 		g.writeln2(';', '}')
@@ -601,7 +601,7 @@ fn (mut g Gen) array_init_with_fields(node ast.ArrayInit, elem_type Type, is_amp
 		g.write2('&(${elem_styp}[]){', '_S("")')
 		g.write('})')
 	} else if node.has_len && elem_type.unaliased_sym.kind in [.struct, .array, .map] {
-		g.write2('(voidptr)&(${elem_styp}[]){', g.type_default(node.elem_type))
+		g.write2('(voidptr)&(${elem_styp}[]){', g.type_default(elem_type.typ))
 		g.write('}[0])')
 	} else {
 		g.write('0)')

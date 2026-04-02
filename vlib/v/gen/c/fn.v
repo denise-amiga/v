@@ -2223,6 +2223,9 @@ fn (mut g Gen) resolve_return_type(node ast.CallExpr) ast.Type {
 				return_type.clear_option_and_result()
 			}
 		}
+		if final_left_sym.kind == .map && node.name in ['clone', 'move'] {
+			return g.unwrap_generic(left_type)
+		}
 		if final_left_sym.kind in [.array, .array_fixed] && !(left_sym.has_method(node.name)
 			|| left_sym.has_method_with_generic_parent(node.name)) && (node.name == 'get'
 			|| node.kind in [.first, .last, .pop_left, .pop, .map, .filter, .reverse, .clone, .clone_to_depth, .repeat, .trim, .slice, .sorted, .sorted_with_compare]) {

@@ -6647,7 +6647,11 @@ fn (mut g Gen) ident(node ast.Ident) {
 			name = 'builtin__print'
 		}
 	}
-	if node.kind == .constant {
+	if node.kind == .constant
+		|| (node.obj is ast.ConstField && node.kind != .function)
+		|| (node.kind == .unresolved && node.mod != '' && node.mod != 'builtin'
+		&& !node.name.contains('.')
+		&& g.table.global_scope.find_const(node.mod + '.' + node.name) != none) {
 		if g.inside_opt_or_res && node.or_expr.kind != .absent && node.obj.typ.has_flag(.option) {
 			styp := g.base_type(node.obj.typ)
 			g.write('(*(${styp}*)')
@@ -6656,7 +6660,12 @@ fn (mut g Gen) ident(node ast.Ident) {
 				g.write('.data)')
 			}
 		}
-		g.write(g.c_const_name(node.name))
+		const_name := if node.name.contains('.') || node.mod == '' || node.mod == 'builtin' {
+			node.name
+		} else {
+			node.mod + '.' + node.name
+		}
+		g.write(g.c_const_name(const_name))
 		return
 	}
 	mut is_auto_heap := node.is_auto_heap()
