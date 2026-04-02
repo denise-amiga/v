@@ -1815,14 +1815,15 @@ fn (mut c Checker) type_implements(typ ast.Type, interface_type ast.Type, pos to
 				{
 					resolved_method.return_type = resolved_return_type
 				}
-				resolved_method.params = resolved_method.params.clone()
-				for i, param in resolved_method.params {
-					if resolved_param_type := c.table.convert_generic_type(param.typ,
+				mut resolved_params := resolved_method.params.clone()
+				for i in 0 .. resolved_params.len {
+					if resolved_param_type := c.table.convert_generic_type(resolved_params[i].typ,
 						interface_generic_names, interface_concrete_types)
 					{
-						resolved_method.params[i].typ = resolved_param_type
+						resolved_params[i].typ = resolved_param_type
 					}
 				}
+				resolved_method.params = resolved_params
 			}
 			methods << resolved_method
 		}
