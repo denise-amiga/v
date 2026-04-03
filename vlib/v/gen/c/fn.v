@@ -4147,17 +4147,18 @@ fn (mut g Gen) method_call(node ast.CallExpr) {
 						placeholder_raw_name_concrete_types = resolved_raw_concrete_types.clone()
 					}
 				}
-				name_concrete_types = if raw_name_concrete_types.len > 0 {
-					raw_name_concrete_types.clone()
+				if raw_name_concrete_types.len > 0 {
+					name_concrete_types = raw_name_concrete_types.clone()
 				} else if placeholder_raw_name_concrete_types.len > 0 {
-					placeholder_raw_name_concrete_types
+					name_concrete_types = placeholder_raw_name_concrete_types.clone()
 				} else if recovered_concrete_types.len > 0 && (concrete_types.len == 0
 					|| concrete_types.any(it == ast.void_type
 					|| it.has_flag(.generic)
 					|| g.type_has_unresolved_generic_parts(it))) {
-					recovered_concrete_types.clone()
+					name_concrete_types = recovered_concrete_types.clone()
 				} else {
-					g.method_name_concrete_types(name_fkey, concrete_types, receiver_concrete_types)
+					name_concrete_types = g.method_name_concrete_types(name_fkey, concrete_types,
+						receiver_concrete_types)
 				}
 				method_suffix := g.generic_fn_name(name_concrete_types, '')
 				method_name_already_specialized = method_suffix != ''
