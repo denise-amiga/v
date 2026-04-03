@@ -1254,8 +1254,6 @@ fn (mut c Checker) infer_fn_generic_types(func &ast.Fn, mut node ast.CallExpr) {
 				if arg.expr.is_auto_deref_var() && typ.is_ptr() {
 					typ = typ.deref()
 				}
-				if has_concrete_caller_types && param.is_mut && param_infer_typ.nr_muls() == 0
-					&& typ.is_ptr() && c.table.final_sym(c.unwrap_generic(typ)).kind == .struct {
 				// resolve &T &&T ...
 				// Use param.typ (not param_infer_typ) to get the actual pointer
 				// count including mut lowering, so that e.g. `mut val T` with

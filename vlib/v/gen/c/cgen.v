@@ -3476,6 +3476,33 @@ fn (g &Gen) can_reuse_sumtype_variant_storage(exp ast.Type, got_is_ptr bool) boo
 	return g.expected_arg_mut || (exp.is_ptr() && (got_is_ptr || g.expected_arg_mut))
 }
 
+fn (g &Gen) interface_expr_needs_heap(expr ast.Expr) bool {
+	match expr {
+		ast.Ident {
+			if expr.obj is ast.Var {
+				return !expr.obj.typ.is_ptr() && !expr.is_auto_heap()
+			}
+			return false
+		}
+		ast.SelectorExpr {
+			root := expr.root_ident() or { return false }
+			if root.obj is ast.Var {
+				return !root.obj.typ.is_ptr() && !root.is_auto_heap()
+			}
+			return false
+		}
+		ast.ParExpr {
+			return g.interface_expr_needs_heap(expr.expr)
+		}
+		ast.UnsafeExpr {
+			return g.interface_expr_needs_heap(expr.expr)
+		}
+		else {
+			return false
+		}
+	}
+}
+
 fn (mut g Gen) expr_has_stable_interface_cast_address(expr ast.Expr) bool {
 	match expr {
 		ast.Ident {
@@ -3520,6 +3547,7 @@ fn (mut g Gen) call_cfn_for_casting_expr(fname string, expr ast.Expr, exp ast.Ty
 
 	is_not_ptr_and_fn := !got_is_ptr && !got_is_fn
 	is_sumtype_cast := !got_is_fn && fname.contains('_to_sumtype_')
+	is_interface_cast := !got_is_fn && fname.contains('_to_Interface_')
 	is_comptime_variant := is_not_ptr_and_fn && expr is ast.Ident
 		&& g.comptime.is_comptime_variant_var(expr)
 	if exp.is_ptr() {

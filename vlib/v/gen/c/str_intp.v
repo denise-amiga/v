@@ -39,6 +39,40 @@ fn (mut g Gen) is_type_name_string_expr(expr ast.Expr) bool {
 	}
 }
 
+fn (g Gen) is_or_block_var_unwrapped(obj ast.Var) bool {
+	init_expr := obj.expr
+	return match init_expr {
+		ast.CallExpr { init_expr.or_block.kind != .absent }
+		ast.Ident { init_expr.or_expr.kind != .absent }
+		ast.IndexExpr { init_expr.or_expr.kind != .absent }
+		ast.SelectorExpr { init_expr.or_block.kind != .absent }
+		ast.PrefixExpr { init_expr.or_block.kind != .absent }
+		else { false }
+	}
+}
+
+fn (g Gen) should_clear_option_flag(expr ast.Expr) bool {
+	ident := match expr {
+		ast.Ident { expr }
+		else { return false }
+	}
+	match ident.obj {
+		ast.Var {
+			if ident.obj.is_unwrapped {
+				return true
+			}
+			if g.is_or_block_var_unwrapped(ident.obj) {
+				return true
+			}
+			if !ident.obj.typ.has_flag(.option) && ident.obj.ct_type_var == .no_comptime {
+				return true
+			}
+		}
+		else {}
+	}
+	return false
+}
+
 fn int_ref_interpolates_as_value(expr ast.Expr, typ ast.Type, fmt u8) bool {
 	if fmt == `p` || !(typ.is_int_valptr() || typ.is_float_valptr()) {
 		return false
@@ -128,7 +162,6 @@ fn (mut g Gen) str_format(node ast.StringInterLiteral, i int, fmts []u8) (u64, s
 	} else {
 		ast.string_type
 	}
-	expr := node.exprs[i]
 	if g.is_type_name_string_expr(expr) {
 		typ = ast.string_type
 	} else if expr is ast.Ident && expr.obj is ast.Var {
