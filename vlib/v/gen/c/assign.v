@@ -1112,7 +1112,14 @@ fn (mut g Gen) assign_stmt(node_ ast.AssignStmt) {
 				if (val in [ast.MatchExpr, ast.IfExpr, ast.ComptimeSelector] || is_fixed_array_var)
 					&& unaliased_right_sym.info is ast.ArrayFixed {
 					tmp_var := g.expr_with_var(val, var_type, false)
-					g.fixed_array_var_init(tmp_var, false, unaliased_right_sym.info.elem_type,
+					// When the temp var is a return wrapper struct (_v_Array_fixed_...),
+					// access .ret_arr to get the actual C array for subscripting.
+					init_expr := if unaliased_right_sym.info.is_fn_ret {
+						'${tmp_var}.ret_arr'
+					} else {
+						tmp_var
+					}
+					g.fixed_array_var_init(init_expr, false, unaliased_right_sym.info.elem_type,
 						unaliased_right_sym.info.size)
 				} else {
 					g.expr(val)
@@ -1586,7 +1593,14 @@ fn (mut g Gen) assign_stmt(node_ ast.AssignStmt) {
 						} else if val in [ast.MatchExpr, ast.IfExpr]
 							&& unaliased_right_sym.info is ast.ArrayFixed {
 							tmp_var := g.expr_with_var(val, var_type, false)
-							g.fixed_array_var_init(tmp_var, false, unaliased_right_sym.info.elem_type,
+							// When the temp var is a return wrapper struct (_v_Array_fixed_...),
+							// access .ret_arr to get the actual C array for subscripting.
+							init_expr := if unaliased_right_sym.info.is_fn_ret {
+								'${tmp_var}.ret_arr'
+							} else {
+								tmp_var
+							}
+							g.fixed_array_var_init(init_expr, false, unaliased_right_sym.info.elem_type,
 								unaliased_right_sym.info.size)
 						} else if is_large_struct_heap && val is ast.StructInit {
 							// For large structs, use vcalloc directly to avoid stack overflow
