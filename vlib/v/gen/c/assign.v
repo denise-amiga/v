@@ -240,7 +240,7 @@ fn (mut g Gen) expr_with_opt(expr ast.Expr, expr_typ ast.Type, ret_typ ast.Type)
 	unwrapped_ret_typ := g.unwrap_generic(ret_typ)
 	if unwrapped_expr_typ.has_flag(.option) && unwrapped_ret_typ.has_flag(.option)
 		&& !g.is_arraymap_set
-		&& expr in [ast.SelectorExpr, ast.DumpExpr, ast.Ident, ast.ComptimeSelector, ast.AsCast, ast.CallExpr, ast.MatchExpr, ast.IfExpr, ast.IndexExpr, ast.UnsafeExpr, ast.CastExpr] {
+		&& expr in [ast.SelectorExpr, ast.DumpExpr, ast.Ident, ast.ComptimeSelector, ast.ComptimeCall, ast.AsCast, ast.CallExpr, ast.MatchExpr, ast.IfExpr, ast.IndexExpr, ast.UnsafeExpr, ast.CastExpr] {
 		if expr in [ast.Ident, ast.CastExpr] {
 			if unwrapped_expr_typ.idx() != unwrapped_ret_typ.idx()
 				&& g.table.type_to_str(unwrapped_expr_typ) != g.table.type_to_str(unwrapped_ret_typ) {
@@ -601,6 +601,7 @@ fn (mut g Gen) assign_stmt(node_ ast.AssignStmt) {
 					} else if val is ast.ComptimeCall {
 						key_str := '${val.method_name}.return_type'
 						var_type = g.type_resolver.get_ct_type_or_default(key_str, var_type)
+						val_type = var_type
 						left.obj.typ = var_type
 						g.type_resolver.update_ct_type(left.name, var_type)
 						g.assign_ct_type[val.pos.pos] = var_type
