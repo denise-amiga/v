@@ -655,6 +655,21 @@ fn (mut p Parser) check(expected token.Kind) {
 	}
 }
 
+// recover_until_closing_rcbr skips the remaining contents of a `{ ... }` block after
+// the opening `{` has already been consumed, leaving the parser positioned after the
+// matching closing brace or at EOF.
+fn (mut p Parser) recover_until_closing_rcbr() {
+	mut brace_level := 1
+	for p.tok.kind != .eof && brace_level > 0 {
+		if p.tok.kind == .lcbr {
+			brace_level++
+		} else if p.tok.kind == .rcbr {
+			brace_level--
+		}
+		p.next()
+	}
+}
+
 // JS functions can have multiple dots in their name:
 // JS.foo.bar.and.a.lot.more.dots()
 fn (mut p Parser) check_js_name() string {
@@ -2399,20 +2414,27 @@ fn (mut p Parser) parse_generic_types() ([]ast.Type, []string) {
 			p.check(.comma)
 		}
 		name := p.tok.lit
+		mut generic_param_err := ''
 		if name != '' && !name[0].is_capital() {
-			p.error('generic parameter needs to be uppercase')
+			generic_param_err = 'generic parameter needs to be uppercase'
+		} else if name.len > 1 {
+			generic_param_err = 'generic parameter name needs to be exactly one char'
+		} else if !util.is_generic_type_name(p.tok.lit) {
+			generic_param_err = '`${p.tok.lit}` is a reserved name and cannot be used for generics'
+		} else if name in param_names {
+			generic_param_err = 'duplicated generic parameter `${name}`'
+		} else if count > 8 {
+			generic_param_err = 'cannot have more than 9 generic parameters'
 		}
-		if name.len > 1 {
-			p.error('generic parameter name needs to be exactly one char')
-		}
-		if !util.is_generic_type_name(p.tok.lit) {
-			p.error('`${p.tok.lit}` is a reserved name and cannot be used for generics')
-		}
-		if name in param_names {
-			p.error('duplicated generic parameter `${name}`')
-		}
-		if count > 8 {
-			p.error('cannot have more than 9 generic parameters')
+		if generic_param_err != '' {
+			p.error(generic_param_err)
+			p.check(.name)
+			for p.tok.kind !in [.comma, end_kind, .eof] {
+				p.next()
+			}
+			first_done = true
+			count++
+			continue
 		}
 		p.check(.name)
 		param_names << name
@@ -2658,6 +2680,17 @@ fn (mut p Parser) const_decl() ast.ConstDecl {
 		full_name := if is_virtual_c_const { name } else { p.prepend_mod(name) }
 		if p.tok.kind == .comma {
 			p.error_with_pos('const declaration do not support multiple assign yet', p.tok.pos())
+			if is_block {
+				for p.tok.kind !in [.eof, .rpar] {
+					p.next()
+				}
+			} else {
+				line_nr := p.tok.line_nr
+				for p.tok.kind != .eof && p.tok.line_nr == line_nr {
+					p.next()
+				}
+			}
+			break
 		}
 		// Allow for `const x := 123`, and for `const x = 123` too.
 		// Supporting `const x := 123` in addition to `const x = 123`, makes extracting local variables to constants
@@ -3237,7 +3270,9 @@ fn (mut p Parser) unsafe_stmt() ast.Stmt {
 	}
 	p.next()
 	if p.inside_unsafe && !p.inside_defer {
-		return p.error_with_pos('already inside `unsafe` block', pos)
+		err := p.error_with_pos('already inside `unsafe` block', pos)
+		p.recover_until_closing_rcbr()
+		return err
 	}
 	p.inside_unsafe = true
 	p.open_scope() // needed in case of `unsafe {stmt}`

@@ -86,9 +86,10 @@ fn main() {
 
 		ctx := canvas[orm_stmt_kind].getContext('2d'.str, js_undefined())?
 
-		context := match ctx {
+		mut context := JS.CanvasRenderingContext2D{}
+		match ctx {
 			JS.CanvasRenderingContext2D {
-				ctx
+				context = ctx
 			}
 			else {
 				panic('can not get 2d context')

@@ -2042,6 +2042,10 @@ fn (mut c Checker) selector_expr(mut node ast.SelectorExpr) ast.Type {
 
 	if has_field {
 		is_used_outside := !c.inside_recheck && sym.mod != c.mod
+		if is_used_outside && sym.language == .c && !sym.is_pub {
+			c.ensure_type_exists(typ, node.pos)
+			return field.typ
+		}
 		unwrapped_sym := c.table.sym(c.unwrap_generic(typ))
 		type_has_module_visibility := final_sym.kind in [.struct, .interface, .sum_type, .aggregate]
 		type_is_private := type_has_module_visibility && !sym.is_pub && sym.mod != 'builtin'
@@ -2489,6 +2493,18 @@ fn (mut c Checker) enum_decl(mut node ast.EnumDecl) {
 						if field.expr.kind == .constant && field.expr.obj.typ.is_int() {
 							// accepts int constants as enum value
 							if mut field.expr.obj is ast.ConstField {
+								if comptime_value := c.eval_comptime_const_expr(field.expr, 0) {
+									if comptime_lit := c.comptime_value_to_integer_literal(comptime_value,
+										field.expr.pos)
+									{
+										c.check_enum_field_integer_literal(comptime_lit, signed,
+											node.is_multi_allowed, senum_type, field.expr.pos, mut
+											useen, enum_umin, enum_umax, mut iseen, enum_imin,
+											enum_imax)
+										field.expr = comptime_lit
+										continue
+									}
+								}
 								folded_expr := c.checker_transformer.expr(mut field.expr.obj.expr)
 
 								if folded_expr is ast.IntegerLiteral {
@@ -2496,6 +2512,7 @@ fn (mut c Checker) enum_decl(mut node ast.EnumDecl) {
 										node.is_multi_allowed, senum_type, field.expr.pos, mut
 										useen, enum_umin, enum_umax, mut iseen, enum_imin,
 										enum_imax)
+									field.expr = folded_expr
 								}
 							}
 							continue
@@ -3814,6 +3831,29 @@ pub fn (mut c Checker) expr(mut node ast.Expr) ast.Type {
 	return ast.void_type
 }
 
+fn (c &Checker) expr_is_known_zero_integer(expr ast.Expr) bool {
+	match expr {
+		ast.IntegerLiteral {
+			return expr.val.int() == 0
+		}
+		ast.ParExpr {
+			return c.expr_is_known_zero_integer(expr.expr)
+		}
+		ast.Ident {
+			match expr.obj {
+				ast.GlobalField, ast.ConstField, ast.Var {
+					if expr.obj.expr is ast.IntegerLiteral {
+						return (expr.obj.expr as ast.IntegerLiteral).val.int() == 0
+					}
+				}
+				else {}
+			}
+		}
+		else {}
+	}
+	return false
+}
+
 // pub fn (mut c Checker) asm_reg(mut node ast.AsmRegister) ast.Type {
 // 	name := node.name
 
@@ -3851,6 +3891,7 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 	}
 	old_inside_integer_literal_cast := c.inside_integer_literal_cast
 	c.inside_integer_literal_cast = to_type.is_int() && node.expr is ast.IntegerLiteral
+	expr_is_ident_or_cast := node.expr is ast.Ident || node.expr is ast.CastExpr
 	node.expr_type = c.expr(mut node.expr) // type to be casted
 	c.inside_integer_literal_cast = old_inside_integer_literal_cast
 
@@ -3871,6 +3912,8 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 	} else {
 		to_type
 	}
+	enforce_safe_pointer_casts := c.file.language == .v && !c.is_builtin_mod
+	enforce_safe_voidptr_ref_cast := enforce_safe_pointer_casts && expr_is_ident_or_cast
 
 	if final_to_sym == final_from_sym && final_to_type.flags() == from_type.flags()
 		&& to_type.flags() == from_type.flags() {
@@ -3903,8 +3946,9 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 		c.error('unknown type `${to_sym.name}`', node.pos)
 	}
 
+	mut to_type_exists := true
 	if to_sym.language != .c {
-		c.ensure_type_exists(to_type, node.pos)
+		to_type_exists = c.ensure_type_exists(to_type, node.pos)
 
 		if to_sym.info is ast.Alias && to_sym.info.parent_type.has_flag(.option)
 			&& !to_type.has_flag(.option) {
@@ -3928,6 +3972,10 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 		// allow conversion from none to every option type
 	} else if to_type.has_flag(.option) && from_type == inner_to_type {
 		return to_type
+	} else if enforce_safe_voidptr_ref_cast && from_type == ast.voidptr_type_idx && to_type.is_ptr()
+		&& !c.inside_unsafe && !c.pref.translated && !c.file.is_translated {
+		tt := c.table.type_to_str(to_type)
+		c.error('cannot cast voidptr to `${tt}` outside `unsafe`', node.pos)
 	} else if to_sym.kind == .sum_type {
 		to_sym_info := to_sym.info as ast.SumType
 		if c.pref.skip_unused && to_sym_info.concrete_types.len > 0 {
@@ -4008,9 +4056,12 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 				else {}
 			}
 		}
-		if from_type == ast.voidptr_type_idx && !c.inside_unsafe && !c.pref.translated
-			&& !c.file.is_translated {
-			c.error('cannot cast voidptr to a struct outside `unsafe`', node.pos)
+		if enforce_safe_pointer_casts && !c.inside_unsafe && to_type.is_ptr() && from_type.is_ptr()
+			&& to_type != from_type && from_type != ast.voidptr_type_idx
+			&& to_type.deref() != ast.char_type && from_type.deref() != ast.char_type {
+			ft := c.table.type_to_str(from_type)
+			tt := c.table.type_to_str(to_type)
+			c.warn('casting `${ft}` to `${tt}` is only allowed in `unsafe` code', node.pos)
 		}
 		if !from_type.is_int() && final_from_sym.kind != .enum
 			&& !from_type.is_any_kind_of_pointer() {
@@ -4066,8 +4117,8 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 			'a variadic'
 		}
 		c.error('cannot type cast ${msg}', node.pos)
-	} else if !c.inside_unsafe && to_type.is_ptr() && from_type.is_ptr() && to_type != from_type
-		&& to_type.deref() != ast.char_type && from_type.deref() != ast.char_type {
+	} else if !c.inside_unsafe && !c.is_builtin_mod && to_type.is_ptr() && from_type.is_ptr()
+		&& to_type != from_type && final_to_sym.kind != .char && final_from_sym.kind != .char {
 		ft := c.table.type_to_str(from_type)
 		tt := c.table.type_to_str(to_type)
 		c.warn('casting `${ft}` to `${tt}` is only allowed in `unsafe` code', node.pos)
@@ -4118,16 +4169,17 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 		c.error('cannot cast type `${ft}` to `${tt}`', node.pos)
 	}
 
-	// if from_type == ast.voidptr_type_idx && !c.inside_unsafe && !c.pref.translated
-	// Do not allow `&u8(unsafe { nil })` etc, force nil or voidptr cast
-	if from_type.is_number() && to_type.is_ptr() && !c.inside_unsafe && !c.pref.translated
-		&& !c.file.is_translated {
-		if from_sym.language != .c {
+	if to_type.is_ptr() && !c.inside_unsafe && !c.pref.translated && !c.file.is_translated
+		&& to_type_exists && final_to_sym.kind != .placeholder {
+		tt := c.table.type_to_str(to_type)
+		if from_type.is_number() && from_sym.language != .c {
 			ne_name := node.expr.str()
-			if !ne_name.starts_with('C.') {
-				// TODO make an error
-				c.warn('cannot cast a number to a type reference, use `nil` or a voidptr cast first: `&Type(voidptr(123))`',
-					node.pos)
+			if to_sym.kind != .struct && !ne_name.starts_with('C.') {
+				if c.expr_is_known_zero_integer(node.expr) {
+					c.error('cannot null cast a pointer, use ${tt}(unsafe { nil })', node.pos)
+				} else {
+					c.error('cannot cast a number to `${tt}` outside `unsafe`', node.pos)
+				}
 			}
 		}
 	}
@@ -5046,6 +5098,11 @@ fn (mut c Checker) ident(mut node ast.Ident) ast.Type {
 		}
 		if x := c.table.global_scope.find_const(node.name) {
 			return x.typ
+		}
+		c_name := node.name.all_after('C.')
+		if !c.pref.translated && !c.file.is_translated && c_name.to_upper() != c_name {
+			c.error('undefined C identifier: `${node.name}`', node.pos)
+			return ast.int_type
 		}
 		return ast.int_type
 	}

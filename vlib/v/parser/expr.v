@@ -259,7 +259,11 @@ fn (mut p Parser) check_expr(precedence int) !ast.Expr {
 			mut pos := p.tok.pos()
 			p.next()
 			if p.inside_unsafe {
-				return p.error_with_pos('already inside `unsafe` block', pos)
+				err := p.error_with_pos('already inside `unsafe` block', pos)
+				if p.tok.kind != .eof {
+					p.recover_until_closing_rcbr()
+				}
+				return err
 			}
 			p.inside_unsafe = true
 			p.check(.lcbr)

@@ -960,7 +960,10 @@ fn (mut g Gen) gen_array_sort(node ast.CallExpr) {
 	}
 
 	stype_arg := g.styp(elem_type)
-	g.sort_fn_definitions.writeln('VV_LOC int ${compare_fn}(${stype_arg}* a, ${stype_arg}* b) {')
+	// In -parallel-cc these bodies are seen by every split C translation unit via `out.h`,
+	// so they need internal linkage to avoid duplicate symbols at link time.
+	sort_fn_visibility := if g.static_modifier != '' { g.static_modifier } else { 'VV_LOC ' }
+	g.sort_fn_definitions.writeln('${sort_fn_visibility}int ${compare_fn}(${stype_arg}* a, ${stype_arg}* b) {')
 	c_condition := if comparison_type.sym.has_method('<') {
 		method_name := if comparison_type.sym.is_builtin() {
 			'builtin__${g.styp(comparison_type.typ)}__lt'
