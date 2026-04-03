@@ -76,7 +76,33 @@ fn (mut encoder Encoder) encode_value[T](val T) {
 	} $else $if T.unaliased_typ is $array {
 		encoder.encode_array(val)
 	} $else $if T.unaliased_typ is $map {
-		encoder.encode_map(val)
+		encoder.output << `{`
+		if encoder.prettify {
+			encoder.increment_level()
+			encoder.add_indent()
+		}
+		mut mi := 0
+		for key, value in val {
+			encoder.encode_string('${key}')
+			encoder.output << `:`
+			if encoder.prettify {
+				encoder.output << ` `
+			}
+			encoder.encode_value(value)
+			if mi < val.len - 1 {
+				encoder.output << `,`
+				if encoder.prettify {
+					encoder.add_indent()
+				}
+			} else {
+				if encoder.prettify {
+					encoder.decrement_level()
+					encoder.add_indent()
+				}
+			}
+			mi++
+		}
+		encoder.output << `}`
 	} $else $if T.unaliased_typ is $enum {
 		if encoder.enum_as_int {
 			encoder.encode_number(int(val))
@@ -376,14 +402,7 @@ fn (mut encoder Encoder) encode_enum[T](val T) {
 fn (mut encoder Encoder) encode_sumtype[T](val T) {
 	$for variant in T.variants {
 		if val is variant {
-			$if variant is $map {
-				encoder.encode_map(val)
-			} $else $if variant is $array {
-				encoder.encode_array(val)
-			} $else {
-				variant_val := val
-				encoder.encode_value(variant_val)
-			}
+			encoder.encode_value(val)
 		}
 	}
 }
