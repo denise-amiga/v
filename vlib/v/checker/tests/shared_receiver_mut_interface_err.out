@@ -1,15 +1,8 @@
-================== C compilation error (from cc): ==============
-cc: /tmp/v_502/tsession_2083c6c40_01KNANV5RV393CX4VWPQ525720/shared_receiver_mut_interface_err.01KNANVNBW4YB78X47Y3ZW2SCR.tmp.c:1980:28: error: use of undeclared identifier 'main__Input_event'
-cc:  1980 |                 ._method_event = (void*) main__Input_event,
-cc:       |                                          ^
-cc: 1 error generated.
-================================================================
-Try passing `-g` when compiling, to see a .v file:line information, that correlates more with the C error.
-(Alternatively, pass `-show-c-output`, to print the full C error message).
-builder error: 
-==================
-C error found while compiling generated C code.
-This can be caused by invalid C interop code, C compiler flags, or a V compiler bug.
-If your code is pure V and this still happens, please report it using `v bug file.v`,
-or goto https://github.com/vlang/v/issues/new/choose .
-You can also use #help on Discord: https://discord.gg/vlang .
+vlib/v/checker/tests/shared_receiver_mut_interface_err.vv:16:19: error: `Input` incorrectly implements method `event` of interface `Handler`: expected `mut Handler`, not `mut shared Input` for parameter 0
+   14 | fn main() {
+   15 |     mut input := Input{}
+   16 |     take_handler(mut input)
+      |                      ~~~~~
+   17 | }
+Details: main.Handler has `fn event(mut x main.Handler)`
+         main.Input has `fn event(mut input shared main.Input)`

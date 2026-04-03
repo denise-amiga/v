@@ -908,7 +908,7 @@ fn (mut c Checker) infix_expr(mut node ast.InfixExpr) ast.Type {
 					node.pos)
 			}
 		} else if !c.pref.translated && !c.file.is_translated && !left_type.has_flag(.generic)
-			&& !right_type.has_flag(.generic) {
+			&& !right_type.has_flag(.generic) && !is_generic_resolved {
 			// Regular enums
 			c.error('only `==` and `!=` are defined on `enum`, use an explicit cast to `int` if needed',
 				node.pos)

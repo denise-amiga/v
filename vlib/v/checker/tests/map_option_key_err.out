@@ -1,18 +1,20 @@
-================== C compilation error (from cc): ==============
-cc: /tmp/v_502/tsession_2083c6c40_01KNANV5RV393CX4VWPQ525720/map_option_key_err.01KNANVHWHHMJH554TM0Q7KYJX.tmp.c:10124:62: error: initializing 'u8 *' (aka 'unsigned char *') with an expression of incompatible type '_option_string' (aka 'struct _option_string')
-cc:  10124 |         {int _ = (*(int*)builtin__map_get(ADDR(map, m), &(string[]){rand__cuid2__Cuid2Generator_next(&c)}, &(int[]){ 0 }));}
-cc:        |                                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cc: /tmp/v_502/tsession_2083c6c40_01KNANV5RV393CX4VWPQ525720/map_option_key_err.01KNANVHWHHMJH554TM0Q7KYJX.tmp.c:10126:35: error: initializing 'u8 *' (aka 'unsigned char *') with an expression of incompatible type '_option_string' (aka 'struct _option_string')
-cc:  10126 |         builtin__map_set(&m, &(string[]){rand__cuid2__Cuid2Generator_next(&c)}, &(int[]) { 1 });
-cc:        |                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cc: 2 errors generated.
-================================================================
-Try passing `-g` when compiling, to see a .v file:line information, that correlates more with the C error.
-(Alternatively, pass `-show-c-output`, to print the full C error message).
-builder error: 
-==================
-C error found while compiling generated C code.
-This can be caused by invalid C interop code, C compiler flags, or a V compiler bug.
-If your code is pure V and this still happens, please report it using `v bug file.v`,
-or goto https://github.com/vlang/v/issues/new/choose .
-You can also use #help on Discord: https://discord.gg/vlang .
+vlib/v/checker/tests/map_option_key_err.vv:7:10: error: invalid key: cannot use `?string` as `string`, it must be unwrapped first
+    5 |     mut c := cuid2.new()
+    6 |     key := c.next()
+    7 |     _ = m[c.next()]
+      |             ~~~~~~
+    8 |     m[c.next()] = 1
+    9 |     m[key]++
+vlib/v/checker/tests/map_option_key_err.vv:8:6: error: invalid key: cannot use `?string` as `string`, it must be unwrapped first
+    6 |     key := c.next()
+    7 |     _ = m[c.next()]
+    8 |     m[c.next()] = 1
+      |         ~~~~~~
+    9 |     m[key]++
+   10 | }
+vlib/v/checker/tests/map_option_key_err.vv:9:4: error: invalid key: cannot use `?string` as `string`, it must be unwrapped first
+    7 |     _ = m[c.next()]
+    8 |     m[c.next()] = 1
+    9 |     m[key]++
+      |       ~~~
+   10 | }

@@ -1,3 +1,8 @@
+vlib/v/checker/tests/lambda_undefined_variables_err.vv:1:6: notice: unused parameter: `g`
+    1 | fn f(g fn (int) string) {
+      |      ^
+    2 | }
+    3 |
 vlib/v/checker/tests/lambda_undefined_variables_err.vv:7:2: warning: unused variable: `s2`
     5 |     f(|x| s1)
     6 | 
