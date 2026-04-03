@@ -745,9 +745,10 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 	if c.table.cur_concrete_types.len > 0
 		&& effective_generic_names.len == c.table.cur_concrete_types.len
 		&& node.generic_names != effective_generic_names {
-		effective_cur_fn = &ast.FnDecl{
-			...*node
-			generic_names: effective_generic_names.clone()
+		unsafe {
+			effective_cur_fn = &ast.FnDecl(memdup(node, sizeof(ast.FnDecl)))
+			mut p := &[]string(&effective_cur_fn.generic_names)
+			*p = effective_generic_names.clone()
 		}
 	}
 	c.table.cur_fn = effective_cur_fn
@@ -3446,9 +3447,10 @@ fn (mut c Checker) post_process_generic_fns() ! {
 						}
 					}
 					if effective_generic_names.len == concrete_types.len {
-						concrete_fn = &ast.FnDecl{
-							...*concrete_fn
-							generic_names: effective_generic_names
+						unsafe {
+							concrete_fn = &ast.FnDecl(memdup(concrete_fn, sizeof(ast.FnDecl)))
+							mut p := &[]string(&concrete_fn.generic_names)
+							*p = effective_generic_names
 						}
 					}
 				}

@@ -336,7 +336,8 @@ fn animate(mut state State, time f64) {
 	state.gl.uniformMatrix4fv(state.mmatrix, JS.Boolean(false), state.mo_matrix.to_number_array())
 
 	state.gl.bindBuffer(dom.gl_element_array_buffer(), state.index_buffer)
-	state.gl.drawElements(dom.gl_triangles(), JS.Number(indices.len), dom.gl_unsigned_short(), JS.Number(0))
+	state.gl.drawElements(dom.gl_triangles(), JS.Number(indices.len), dom.gl_unsigned_short(),
+		JS.Number(0))
 
 	dom.window().requestAnimationFrame(fn [mut state] (time JS.Number) {
 		animate(mut state, f64(time))
