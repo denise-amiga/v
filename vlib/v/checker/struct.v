@@ -727,7 +727,7 @@ fn (mut c Checker) struct_init(mut node ast.StructInit, is_field_zero_struct_ini
 		&& !is_field_zero_struct_init {
 		c.error('type `${type_sym.name}` is private', node.pos)
 	}
-	if type_sym.info is ast.Struct && type_sym.mod != c.mod {
+	if type_sym.info is ast.Struct && type_sym.mod != c.mod && !is_field_zero_struct_init {
 		for attr in type_sym.info.attrs {
 			match attr.name {
 				'noinit' {
