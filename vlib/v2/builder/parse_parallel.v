@@ -65,7 +65,8 @@ fn (mut b Builder) parse_files_parallel(files []string) []ast.File {
 	}
 	// parse builtin
 	if !b.pref.skip_builtin {
-		worker_pool.queue_jobs(get_v_files_from_dir(b.pref.get_vlib_module_path('builtin'), b.pref.user_defines))
+		worker_pool.queue_jobs(get_v_files_from_dir(b.pref.get_vlib_module_path('builtin'),
+			b.pref.user_defines))
 	}
 	// parse user files
 	worker_pool.queue_jobs(files)
