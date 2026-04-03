@@ -550,7 +550,7 @@ fn (mut decoder Decoder) decode_value[T](mut val T) ! {
 		decoder.decode_sumtype(mut val)!
 		return
 	} $else $if T.unaliased_typ is $map {
-		decode_map_value(mut decoder, mut val)!
+		decoder.decode_map(mut val)!
 		return
 	} $else $if T.unaliased_typ is $array_dynamic {
 		val.clear()

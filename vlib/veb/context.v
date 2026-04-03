@@ -152,11 +152,12 @@ pub fn (mut ctx Context) text(s string) Result {
 	return ctx.send_response_to_client('text/plain', s)
 }
 
-fn (mut ctx Context) set_static_compression_config(enable_gzip bool, enable_zstd bool, enable_compression bool, max_size int) {
+fn (mut ctx Context) set_static_compression_config(enable_gzip bool, enable_zstd bool, enable_compression bool, max_size int, mime_types []string) {
 	ctx.enable_static_gzip = enable_gzip
 	ctx.enable_static_zstd = enable_zstd
 	ctx.enable_static_compression = enable_compression
 	ctx.static_compression_max_size = max_size
+	ctx.static_compression_mime_types = mime_types
 }
 
 // Response with json_s as payload and content-type `application/json`
