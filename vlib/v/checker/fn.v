@@ -2043,9 +2043,13 @@ fn (mut c Checker) fn_call(mut node ast.CallExpr, mut continue_check &bool) ast.
 			c.error('expression cannot be passed as `voidptr`', call_arg.expr.pos())
 		}
 		// Handle expected interface
-		is_generic_interface := final_param_sym.kind == .generic_inst
-			&& final_param_sym.info is ast.GenericInst
-			&& c.table.type_symbols[final_param_sym.info.parent_idx].kind == .interface
+		mut is_generic_interface := false
+		if final_param_sym.kind == .generic_inst {
+			gi := final_param_sym.info
+			if gi is ast.GenericInst {
+				is_generic_interface = c.table.type_symbols[gi.parent_idx].kind == .interface
+			}
+		}
 		if final_param_sym.kind == .interface || is_generic_interface {
 			// For generic interface parameters, resolve the generic type to its concrete
 			// instantiation before checking implementation.
@@ -2363,7 +2367,8 @@ fn (mut c Checker) fn_call(mut node ast.CallExpr, mut continue_check &bool) ast.
 			}
 		}
 	}
-	c.check_os_raw_io_call(node, func, concrete_types, if func.is_method { 1 } else { 0 })
+	raw_io_arg_offset := if func.is_method { 1 } else { 0 }
+	c.check_os_raw_io_call(node, func, concrete_types, raw_io_arg_offset)
 
 	// resolve return generics struct to concrete type
 	if func.generic_names.len > 0 && func.return_type.has_flag(.generic)
