@@ -1053,10 +1053,11 @@ fn (mut c Checker) call_expr(mut node ast.CallExpr) ast.Type {
 	mut continue_check := true
 	node.left_type = left_type
 	// Now call `method_call` or `fn_call` for specific checks.
-	typ := if node.is_method {
-		c.method_call(mut node, mut continue_check)
+	mut typ := ast.void_type
+	if node.is_method {
+		typ = c.method_call(mut node, mut continue_check)
 	} else {
-		c.fn_call(mut node, mut continue_check)
+		typ = c.fn_call(mut node, mut continue_check)
 	}
 	if c.pref.is_vls {
 		c.autocomplete_for_fn_call_expr(node)
@@ -2565,10 +2566,9 @@ fn (mut c Checker) method_call(mut node ast.CallExpr, mut continue_check &bool) 
 	unwrapped_left_type := c.unwrap_generic(left_type)
 	left_sym := c.table.sym(unwrapped_left_type)
 	final_left_sym := c.table.final_sym(unwrapped_left_type)
-	final_left_kind := if final_left_sym.kind == .generic_inst {
-		c.table.sym(ast.new_type((final_left_sym.info as ast.GenericInst).parent_idx)).kind
-	} else {
-		final_left_sym.kind
+	mut final_left_kind := final_left_sym.kind
+	if final_left_sym.kind == .generic_inst && final_left_sym.info is ast.GenericInst {
+		final_left_kind = c.table.sym(ast.new_type(final_left_sym.info.parent_idx)).kind
 	}
 
 	method_name := node.name
@@ -3492,7 +3492,7 @@ fn min_required_call_params(f &ast.Fn, is_method_call bool) int {
 	return required
 }
 
-fn call_can_fill_optional_args(node ast.CallExpr) bool {
+fn call_can_fill_optional_args(node &ast.CallExpr) bool {
 	if node.args.any(it.expr is ast.ArrayDecompose) {
 		return false
 	}
