@@ -1,10 +1,3 @@
-vlib/v/util/diff.v:6:1: warning: @[deprecated_after] is only valid, in the presence of a `@[deprecated]` attribute
-    4 | 
-    5 | // find_working_diff_command returns the first available command from a list of known diff cli tools.
-    6 | @[deprecated_after: '2024-06-30']
-      | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    7 | @[deprecated]
-    8 | pub fn find_working_diff_command() !string {
 vlib/v/checker/tests/comparing_typesymbol_to_a_type_should_not_compile.vv:12:7: error: infix expr: cannot use `v.ast.Type` (right expression) as `v.ast.TypeSymbol`
    10 |     x := ityp == ast.string_type
    11 |     // the next line should produce at least a warning, or even an error, without an explicit cast:
