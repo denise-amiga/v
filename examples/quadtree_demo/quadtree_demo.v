@@ -14,10 +14,6 @@ const font_small = gg.TextCfg{
 	color: gg.black
 	size:  20
 }
-const font_large = gg.TextCfg{
-	color: gg.black
-	size:  40
-}
 
 struct App {
 mut:

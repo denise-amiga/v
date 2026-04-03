@@ -74,16 +74,12 @@ const colors = [
 
 const frame_rate = 30 // fps
 
-const msg_display_time = 5 * frame_rate
 const w = 200
 const h = 100
 const space = ' '
 const spaces = '  '
 const select_color = 'Select color: '
 const select_size = 'Size: ＋  －'
-const help_1 = '╭────────╮'
-const help_2 = '│  HELP  │'
-const help_3 = '╰────────╯'
 
 struct App {
 mut:

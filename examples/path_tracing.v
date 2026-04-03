@@ -33,7 +33,6 @@ import math.vec
 
 const inf = 1e+10
 const eps = 1e-4
-const f_0 = 0.0
 
 type Vec = vec.Vec3[f64]
 

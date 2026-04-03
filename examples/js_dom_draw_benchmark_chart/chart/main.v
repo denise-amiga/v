@@ -158,18 +158,6 @@ fn v_sqlite_memory() !FrameworkBenchmarkResponse {
 	return framework_benchmark_response
 }
 
-fn v_sqlite_file() !FrameworkBenchmarkResponse {
-	// url := 'http://localhost:3000/sqlite-memory/${benchmark_loop_length}'
-	// res := http.get(url) or { panic(err) }
-	// framework_benchmark_response := json.decode(FrameworkBenchmarkResponse, res.body)!
-	framework_benchmark_response := FrameworkBenchmarkResponse{
-		insert: []
-		select: []
-		update: []
-	}
-	return framework_benchmark_response
-}
-
 fn gen_table_info(attribute_names []string, framework_platform map[string][]int) map[string]map[string]string {
 	mut table := map[string]map[string]string{}
 

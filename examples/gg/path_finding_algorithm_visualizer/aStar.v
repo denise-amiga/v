@@ -453,11 +453,3 @@ fn (mut heap MinHeap) right_child(idx int) !int {
 fn (mut heap MinHeap) parent(idx int) int {
 	return (idx - 1) / 2
 }
-
-// comaparator of heap //TODO not used
-fn comparator(n1 Node, n2 Node) bool {
-	if n1.f_score == n2.f_score {
-		return n1.count > n2.count
-	}
-	return n1.f_score > n2.f_score
-}

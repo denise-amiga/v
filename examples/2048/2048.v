@@ -503,26 +503,6 @@ fn ai_empty_count(board AiBoard) int {
 	return empty_tiles
 }
 
-@[inline]
-fn ai_has_moves(board AiBoard) bool {
-	if ai_empty_count(board) > 0 {
-		return true
-	}
-	for y in 0 .. 4 {
-		for x in 0 .. 4 {
-			idx := y << 2 + x
-			value := ai_tile(board, idx)
-			if x < 3 && value == ai_tile(board, idx + 1) {
-				return true
-			}
-			if y < 3 && value == ai_tile(board, idx + 4) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 fn (ai &AiEngine) move_left(board AiBoard) (AiBoard, bool) {
 	mut res := AiBoard(0)
 	mut changed := false

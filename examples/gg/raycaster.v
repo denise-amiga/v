@@ -15,7 +15,6 @@ import gg
 import math
 
 const player_size = 8
-const player_move_delta = 10
 const map_x_size = 8
 const map_y_size = 8
 const map_square = 64

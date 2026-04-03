@@ -89,12 +89,6 @@ mut:
 	content  []u8
 }
 
-fn new_file_reader(ctx &Context) FileReader {
-	return FileReader{
-		ctx: ctx
-	}
-}
-
 fn (mut f FileReader) other_block(mut read tar.Read, details string) {
 	if f.ctx.read_last_block(mut read) {
 		return
