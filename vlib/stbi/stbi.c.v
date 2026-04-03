@@ -113,6 +113,8 @@ fn C.stbi_load(filename &char, x &int, y &int, channels_in_file &int, desired_ch
 fn C.stbi_load_from_file(f voidptr, x &int, y &int, channels_in_file &int, desired_channels i32) &u8
 fn C.stbi_load_from_memory(buffer &u8, len i32, x &int, y &int, channels_in_file &int, desired_channels i32) &u8
 
+pub const C.STBI_rgb_alpha int
+
 @[params]
 pub struct LoadParams {
 pub:

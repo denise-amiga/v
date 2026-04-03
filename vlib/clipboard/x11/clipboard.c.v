@@ -114,6 +114,17 @@ fn C.WhitePixel(display &C.Display, screen_number i32) u32
 
 fn C.XFree(data voidptr)
 
+// X11 event type constants
+pub const C.DestroyNotify int
+pub const C.SelectionClear int
+pub const C.SelectionRequest int
+pub const C.SelectionNotify int
+pub const C.PropertyNotify int // X11 property/selection constants
+
+pub const C.CurrentTime int
+pub const C.PropModeReplace int
+pub const C.PropertyChangeMask i64
+
 fn todo_del() {}
 
 // X11 event types are defined in vlib/x/x11/x11.v
