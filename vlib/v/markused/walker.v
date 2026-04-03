@@ -1085,9 +1085,11 @@ fn (mut w Walker) fn_decl_with_fkey(mut node ast.FnDecl, walk_fkey string) {
 			}
 		}
 	}
+	prev_cur_fn := w.cur_fn
 	w.cur_fn = fkey
 	w.stmts(node.stmts)
 	w.defer_stmts(node.defer_stmts)
+	w.cur_fn = prev_cur_fn
 }
 
 pub fn (mut w Walker) fn_decl(mut node ast.FnDecl) {

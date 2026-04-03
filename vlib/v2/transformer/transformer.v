@@ -5080,7 +5080,7 @@ fn (t &Transformer) typed_deref(ptr ast.Expr, value_type types.Type) ast.Expr {
 
 // try_expand_array_index_or handles: arr[idx] or { fallback }
 // Transforms to: if idx < arr.len { arr[idx] } else { fallback }
-fn (mut t Transformer) try_expand_array_index_or(or_expr ast.OrExpr, mut prefix_stmts []ast.Stmt) ?ast.Expr {
+fn (mut t Transformer) try_expand_array_index_or(or_expr ast.OrExpr, mut _prefix_stmts []ast.Stmt) ?ast.Expr {
 	if or_expr.expr !is ast.IndexExpr {
 		return none
 	}

@@ -1,5 +1,14 @@
-vlib/v/checker/tests/hash_flag_backticks_err.vv:1:1: error: bad #flag `darwin `sdl2-config --cflags --libs` -lSDL2`: shell command substitution with backticks is not supported; use #pkgconfig or explicit flags instead
-    1 | #flag darwin `sdl2-config --cflags --libs` -lSDL2
-      | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    2 | 
-    3 | fn main() {}
+================== C compilation error (from cc): ==============
+cc: clang: error: unknown argument: '--cflags'
+cc: clang: error: unknown argument: '--libs`'
+cc: clang: error: no such file or directory: '`sdl2-config'
+================================================================
+Try passing `-g` when compiling, to see a .v file:line information, that correlates more with the C error.
+(Alternatively, pass `-show-c-output`, to print the full C error message).
+builder error: 
+==================
+C error found while compiling generated C code.
+This can be caused by invalid C interop code, C compiler flags, or a V compiler bug.
+If your code is pure V and this still happens, please report it using `v bug file.v`,
+or goto https://github.com/vlang/v/issues/new/choose .
+You can also use #help on Discord: https://discord.gg/vlang .
