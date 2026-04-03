@@ -43,7 +43,13 @@ module ecdsa
 // The following header is available on OpenSSL 3.0, but not in OpenSSL 1.1.1f
 //#include <openssl/core.h>
 
-// The new opaque of public key pair high level API
+// NID constants for elliptic curves
+pub const C.NID_X9_62_prime256v1 int
+pub const C.NID_secp384r1 int
+pub const C.NID_secp521r1 int
+pub const C.NID_secp256k1 int
+pub const C.NID_X9_62_id_ecPublicKey int // The new opaque of public key pair high level API
+
 @[typedef]
 struct C.EVP_PKEY {}
 
@@ -184,10 +190,3 @@ fn C.OSSL_PARAM_BLD_push_utf8_string(bld &C.OSSL_PARAM_BLD, key &char, buf &char
 fn C.OSSL_PARAM_BLD_push_BN(bld &C.OSSL_PARAM_BLD, key &u8, bn &C.BIGNUM) i32
 fn C.OSSL_PARAM_BLD_push_octet_string(bld &C.OSSL_PARAM_BLD, key &u8, buf voidptr, bsize i32) i32
 fn C.OSSL_PARAM_BLD_to_param(bld &C.OSSL_PARAM_BLD) &C.OSSL_PARAM
-
-// NID constants for elliptic curves
-pub const C.NID_X9_62_prime256v1 int
-pub const C.NID_secp384r1 int
-pub const C.NID_secp521r1 int
-pub const C.NID_secp256k1 int
-pub const C.NID_X9_62_id_ecPublicKey int
