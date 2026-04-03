@@ -741,17 +741,18 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 		}
 	}
 	c.expected_type = ast.void_type
-	mut effective_cur_fn := unsafe { node }
+	saved_generic_names := node.generic_names
+	mut needs_generic_names_restore := false
 	if c.table.cur_concrete_types.len > 0
 		&& effective_generic_names.len == c.table.cur_concrete_types.len
 		&& node.generic_names != effective_generic_names {
 		unsafe {
-			effective_cur_fn = &ast.FnDecl(memdup(node, sizeof(ast.FnDecl)))
-			mut p := &[]string(&effective_cur_fn.generic_names)
+			mut p := &[]string(&node.generic_names)
 			*p = effective_generic_names.clone()
 		}
+		needs_generic_names_restore = true
 	}
-	c.table.cur_fn = effective_cur_fn
+	c.table.cur_fn = unsafe { node }
 	// Add return if `fn(...) ? {...}` have no return at end
 	if node.return_type != ast.void_type && node.return_type.has_flag(.option)
 		&& (node.stmts.len == 0 || node.stmts.last() !is ast.Return) {
@@ -897,6 +898,12 @@ fn (mut c Checker) fn_decl(mut node ast.FnDecl) {
 					node.pos)
 			}
 			else {}
+		}
+	}
+	if needs_generic_names_restore {
+		unsafe {
+			mut p := &[]string(&node.generic_names)
+			*p = saved_generic_names
 		}
 	}
 }
@@ -3448,7 +3455,6 @@ fn (mut c Checker) post_process_generic_fns() ! {
 					}
 					if effective_generic_names.len == concrete_types.len {
 						unsafe {
-							concrete_fn = &ast.FnDecl(memdup(concrete_fn, sizeof(ast.FnDecl)))
 							mut p := &[]string(&concrete_fn.generic_names)
 							*p = effective_generic_names
 						}
