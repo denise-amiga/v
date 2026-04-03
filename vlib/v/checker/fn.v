@@ -4629,7 +4629,10 @@ fn (mut c Checker) resolve_fn_return_type(func &ast.Fn, node ast.CallExpr, concr
 					node.concrete_types)
 				{
 					typ_sym := c.table.sym(typ)
-					if typ.has_flag(.generic) || (typ_sym.kind == .generic_inst&& (typ_sym.info as ast.GenericInst).concrete_types.any(it.has_flag(.generic))) {
+					has_generic_concrete := typ_sym.kind == .generic_inst
+						&& typ_sym.info is ast.GenericInst
+						&& typ_sym.info.concrete_types.any(it.has_flag(.generic))
+					if typ.has_flag(.generic) || has_generic_concrete {
 						return typ
 					}
 				}
