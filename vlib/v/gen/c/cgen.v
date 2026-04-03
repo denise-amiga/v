@@ -7268,20 +7268,29 @@ fn (mut g Gen) cast_expr(node ast.CastExpr) {
 	expr_sym := g.table.sym(expr_type)
 	final_expr_sym := g.table.final_sym(expr_type)
 	node_typ_is_option := node.typ.has_flag(.option)
-	if sym.kind in [.sum_type, .interface] {
+	is_alias_of_sumtype := sym.kind == .alias && sym.info is ast.Alias
+		&& final_sym.kind in [.sum_type, .interface]
+	if sym.kind in [.sum_type, .interface] || is_alias_of_sumtype {
 		if g.table.unaliased_type(expr_type) == node_typ {
 			g.expr(node.expr)
 			return
+		}
+		// For aliases of sumtypes, use the underlying sumtype as the cast target.
+		// The C layout is identical (typedef alias), so no additional wrapping is needed.
+		effective_node_typ := if is_alias_of_sumtype {
+			(sym.info as ast.Alias).parent_type
+		} else {
+			node_typ
 		}
 		if node_typ_is_option && node.expr is ast.None {
 			g.gen_option_error(node_typ, ast.Expr(node.expr))
 		} else if node.expr is ast.Ident && g.comptime.is_comptime_variant_var(node.expr) {
 			g.expr_with_cast(ast.Expr(node.expr), g.type_resolver.get_ct_type_or_default('${g.comptime.comptime_for_variant_var}.typ',
-				ast.void_type), node_typ)
+				ast.void_type), effective_node_typ)
 		} else if node_typ_is_option {
-			g.expr_with_opt(node.expr, expr_type, node_typ)
+			g.expr_with_opt(node.expr, expr_type, effective_node_typ)
 		} else {
-			g.expr_with_cast(node.expr, expr_type, node_typ)
+			g.expr_with_cast(node.expr, expr_type, effective_node_typ)
 		}
 	} else if !node_typ_is_option && !node_typ.is_ptr() && !expr_type.is_ptr()
 		&& ((sym.info is ast.Struct && !sym.info.is_typedef)

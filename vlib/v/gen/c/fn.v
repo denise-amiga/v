@@ -5073,6 +5073,33 @@ fn (mut g Gen) call_args(node ast.CallExpr) {
 			}
 		}
 	}
+	// For fn_var calls inside generic functions, the expected_arg_types may have been
+	// resolved with concrete types from a previous instantiation. Re-resolve them from
+	// the function pointer's type in the current generic context.
+	if node.is_fn_var && g.cur_fn != unsafe { nil } && g.cur_fn.generic_names.len > 0
+		&& g.cur_concrete_types.len > 0 {
+		lookup_name := if node.left is ast.Ident { node.left.name } else { node.name }
+		resolved_fn_type := g.resolve_current_fn_generic_param_type(lookup_name)
+		mut fn_var_type := if resolved_fn_type != 0
+			&& g.table.final_sym(g.unwrap_generic(resolved_fn_type)).kind == .function {
+			g.unwrap_generic(g.recheck_concrete_type(resolved_fn_type))
+		} else {
+			g.unwrap_generic(g.recheck_concrete_type(node.fn_var_type))
+		}
+		if fn_var_type != 0 {
+			fn_sym := g.table.final_sym(fn_var_type)
+			if fn_sym.info is ast.FnType {
+				for i in 0 .. expected_types.len {
+					if i < fn_sym.info.func.params.len {
+						resolved_param_type := g.unwrap_generic(g.recheck_concrete_type(fn_sym.info.func.params[i].typ))
+						if resolved_param_type != 0 {
+							expected_types[i] = resolved_param_type
+						}
+					}
+				}
+			}
+		}
+	}
 	// unwrap generics fn/method arguments to concretes
 	if !g.has_active_call_generic_context() && node.concrete_types.len > 0
 		&& node.concrete_types.all(!it.has_flag(.generic)) {
