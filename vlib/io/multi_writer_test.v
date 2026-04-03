@@ -11,17 +11,13 @@ fn test_multi_writer_write_successful() {
 
 fn test_multi_writer_write_incomplete() {
 	mut mw := new_multi_writer(&TestWriter{}, &TestIncompleteWriter{})
-	_ := mw.write('0123456789'.bytes()) or {
-		return
-	}
+	_ := mw.write('0123456789'.bytes()) or { return }
 	assert false
 }
 
 fn test_multi_writer_write_error() {
 	mut mw := new_multi_writer(&TestWriter{}, &TestErrorWriter{}, &TestWriter{})
-	_ := mw.write('0123456789'.bytes()) or {
-		return
-	}
+	_ := mw.write('0123456789'.bytes()) or { return }
 	assert false
 }
 
