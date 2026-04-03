@@ -110,8 +110,7 @@ fn (mut s SSLConn) init() ! {
 
 	if s.config.validate {
 		C.SSL_CTX_set_verify_depth(s.sslctx, 4)
-		C.SSL_CTX_set_options(s.sslctx,
-			C.SSL_OP_NO_SSLv2 | C.SSL_OP_NO_SSLv3 | C.SSL_OP_NO_COMPRESSION)
+		C.SSL_CTX_set_options(s.sslctx, C.SSL_OP_NO_COMPRESSION)
 	}
 
 	s.ssl = unsafe { &C.SSL(C.SSL_new(s.sslctx)) }
