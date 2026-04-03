@@ -862,7 +862,7 @@ fn (mut w Walker) expr(node_ ast.Expr) {
 		}
 		ast.PostfixExpr {
 			w.expr(node.expr)
-			if node.op == .question {
+			if node.op == .question && node.expr !is ast.Ident {
 				w.used_option++
 				w.used_panic++
 			}
