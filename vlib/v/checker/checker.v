@@ -2521,8 +2521,8 @@ fn (mut c Checker) selector_expr(mut node ast.SelectorExpr) ast.Type {
 				}
 			}
 		}
-		if !c.inside_unsafe && final_sym.kind == .struct {
-			struct_info := final_sym.info as ast.Struct
+		if !c.inside_unsafe && sym.kind == .struct {
+			struct_info := sym.info as ast.Struct
 			if struct_info.is_union && node.next_token !in token.assign_tokens {
 				if !c.pref.translated && !c.file.is_translated {
 					c.warn('reading a union field (or its address) requires `unsafe`',
