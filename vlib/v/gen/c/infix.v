@@ -185,23 +185,34 @@ fn (mut g Gen) infix_expr_eq_op(node ast.InfixExpr) {
 		if node.op == .ne {
 			g.write('!')
 		}
-		mut method_name := if has_alias_eq_op_overload {
-			g.styp(left.typ.set_nr_muls(0))
+		if left.sym.kind == .struct && (left.sym.info as ast.Struct).generic_types.len > 0 {
+			concrete_types := (left.sym.info as ast.Struct).concrete_types
+			mut method_name := '${left.sym.cname}__eq'
+			if left.unaliased_sym.is_builtin() {
+				method_name = 'builtin__${method_name}'
+			}
+			method_name = g.generic_fn_name(concrete_types, method_name)
+			g.write(method_name)
 		} else {
-			g.styp(left.unaliased.set_nr_muls(0))
+			mut method_name := if has_alias_eq_op_overload {
+				g.styp(left.typ.set_nr_muls(0))
+			} else {
+				g.styp(left.unaliased.set_nr_muls(0))
+			}
+			mut is_builtin_or_alias_to_builtin := left.sym.is_builtin()
+			if !has_alias_eq_op_overload && !is_builtin_or_alias_to_builtin
+				&& left.sym.info is ast.Alias {
+				alias_info := left.sym.info as ast.Alias
+				parent_sym := g.table.sym(alias_info.parent_type)
+				is_builtin_or_alias_to_builtin = parent_sym.is_builtin()
+			}
+			if is_builtin_or_alias_to_builtin {
+				method_name = 'builtin__${method_name}'
+			}
+			g.write(method_name)
+			g.write('__eq')
 		}
-		mut is_builtin_or_alias_to_builtin := left.sym.is_builtin()
-		if !has_alias_eq_op_overload && !is_builtin_or_alias_to_builtin
-			&& left.sym.info is ast.Alias {
-			alias_info := left.sym.info as ast.Alias
-			parent_sym := g.table.sym(alias_info.parent_type)
-			is_builtin_or_alias_to_builtin = parent_sym.is_builtin()
-		}
-		if is_builtin_or_alias_to_builtin {
-			method_name = 'builtin__${method_name}'
-		}
-		g.write(method_name)
-		g.write2('__eq(', '*'.repeat(left.typ.nr_muls()))
+		g.write2('(', '*'.repeat(left.typ.nr_muls()))
 		if eq_operator_expects_ptr {
 			g.write('&')
 		}

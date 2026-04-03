@@ -1691,6 +1691,10 @@ fn (mut g Gen) unwrap_receiver_type(node ast.CallExpr) (ast.Type, &ast.TypeSymbo
 					concrete_types)
 				{
 					unwrapped_rec_type = utyp
+				} else if concrete_types.len > 0 && !left_type.has_flag(.generic) {
+					// Fallback: if convert_generic_type fails (e.g. method uses
+					// different generic param name than struct), use left_type directly
+					unwrapped_rec_type = left_type
 				}
 			}
 			else {}
@@ -1728,7 +1732,7 @@ fn (mut g Gen) unwrap_receiver_type(node ast.CallExpr) (ast.Type, &ast.TypeSymbo
 			typ_sym = g.table.sym(unwrapped_rec_type)
 		}
 	}
-	if node.from_embed_types.len > 0 {
+	if node.from_embed_types.len > 0 && !typ_sym.has_method(node.name) {
 		unwrapped_rec_type = node.from_embed_types.last()
 		typ_sym = g.table.sym(unwrapped_rec_type)
 	}

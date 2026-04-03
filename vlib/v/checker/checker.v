@@ -1425,12 +1425,42 @@ fn (mut c Checker) type_implements(typ ast.Type, interface_type ast.Type, pos to
 
 		// Verify methods
 		for imethod in imethods {
-			method := c.table.find_method_with_embeds(typ_sym, imethod.name) or {
+			mut method := c.table.find_method_with_embeds(typ_sym, imethod.name) or {
 				typ_sym.find_method_with_generic_parent(imethod.name) or {
 					c.error("`${styp}` doesn't implement method `${imethod.name}` of interface `${inter_sym.name}`", pos)
 					are_methods_implemented = false
 					continue
 				}
+			}
+			// Resolve generic parameters for concrete generic types
+			match typ_sym.info {
+				ast.Struct, ast.Interface, ast.SumType {
+					if typ_sym.info.concrete_types.len > 0
+						&& typ_sym.info.parent_type.has_flag(.generic) {
+						parent_sym := c.table.sym(typ_sym.info.parent_type)
+						match parent_sym.info {
+							ast.Struct, ast.Interface, ast.SumType {
+								generic_names :=
+									parent_sym.info.generic_types.map(c.table.sym(it).name)
+								if rt := c.table.convert_generic_type(method.return_type,
+									generic_names, typ_sym.info.concrete_types)
+								{
+									method.return_type = rt
+								}
+								method.params = method.params.clone()
+								for mut param in method.params {
+									if pt := c.table.convert_generic_type(param.typ, generic_names,
+										typ_sym.info.concrete_types)
+									{
+										param.typ = pt
+									}
+								}
+							}
+							else {}
+						}
+					}
+				}
+				else {}
 			}
 			msg := c.table.is_same_method(imethod, method)
 			if msg.len > 0 {
