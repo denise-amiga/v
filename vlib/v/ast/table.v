@@ -3457,7 +3457,7 @@ pub fn (mut t Table) generic_insts_to_concrete() {
 								}
 							}
 							if fields[i].has_default_expr
-							&& fields[i].default_expr_typ.has_flag(.generic) {
+								&& fields[i].default_expr_typ.has_flag(.generic) {
 								fields[i].default_expr_typ = t.convert_generic_expr_type(fields[i].default_expr_typ,
 									generic_names, info.concrete_types)
 								fields[i].default_expr = t.convert_generic_default_expr(fields[i].default_expr,
