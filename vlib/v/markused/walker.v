@@ -530,7 +530,7 @@ fn (mut w Walker) expr(node_ ast.Expr) {
 			w.expr(node.arg)
 			if !w.uses_memdup {
 				fsym := w.table.final_sym(node.typ)
-				w.uses_memdup = fsym.kind == .sum_type
+				w.uses_memdup = fsym.kind in [.sum_type, .interface]
 			}
 			w.mark_by_type(node.typ)
 			if node.typ.has_flag(.option) {

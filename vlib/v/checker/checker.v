@@ -234,8 +234,8 @@ fn (mut c Checker) has_active_generic_recheck_context() bool {
 }
 
 fn (mut c Checker) refresh_generic_scope_var_type_for_use(mut v ast.Var, use_pos int) ast.Type {
-	if c.table.cur_fn == unsafe { nil } || !c.has_active_generic_recheck_context() || v.is_arg
-		|| v.expr is ast.EmptyExpr || v.pos.pos <= 0 || v.pos.pos >= use_pos {
+	if v.is_arg || v.expr is ast.EmptyExpr || v.pos.pos <= 0 || v.pos.pos >= use_pos
+		|| c.table.cur_fn == unsafe { nil } || !c.has_active_generic_recheck_context() {
 		return v.typ
 	}
 	$if trace_ci_fixes ? {
@@ -1391,6 +1391,12 @@ fn (mut c Checker) fail_if_immutable_to_mutable(left_type ast.Type, right_type a
 		return true
 	}
 	match right {
+		ast.CastExpr {
+			if c.table.final_sym(c.unwrap_generic(right.typ)).kind == .interface {
+				mut expr := right.expr
+				c.fail_if_immutable(mut expr)
+			}
+		}
 		ast.Ident {
 			if right.obj is ast.Var {
 				if left_type.is_ptr() && !right.is_mut() && right_type.is_ptr() {
@@ -1459,7 +1465,10 @@ fn (mut c Checker) fail_if_immutable(mut expr ast.Expr) (string, token.Pos) {
 	mut explicit_lock_needed := false
 	match mut expr {
 		ast.CastExpr {
-			// TODO
+			if c.table.final_sym(c.unwrap_generic(expr.typ)).kind == .interface {
+				mut inner_expr := expr.expr
+				return c.fail_if_immutable(mut inner_expr)
+			}
 			return '', expr.pos
 		}
 		ast.ComptimeSelector {

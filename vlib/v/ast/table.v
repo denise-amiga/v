@@ -392,25 +392,21 @@ pub fn (t &Table) get_type_methods(typ Type) []Fn {
 pub fn (t &Table) find_method(s &TypeSymbol, name string) !Fn {
 	mut ts := unsafe { s }
 	for {
-		match ts.kind {
-			.generic_inst {
-				parent_sym := t.sym(new_type((ts.info as GenericInst).parent_idx))
-				if method := parent_sym.find_method_with_generic_parent(name) {
-					return method
-				}
-				return error('unknown method')
+		if method := ts.find_method(name) {
+			return method
+		}
+		if ts.kind == .generic_inst {
+			parent_sym := t.sym(new_type((ts.info as GenericInst).parent_idx))
+			if method := parent_sym.find_method_with_generic_parent(name) {
+				return method
 			}
-			.aggregate {
-				if method := t.register_aggregate_method(mut ts, name) {
-					return method
-				} else {
-					return err
-				}
-			}
-			else {
-				if method := ts.find_method(name) {
-					return method
-				}
+			return error('unknown method')
+		}
+		if ts.kind == .aggregate {
+			if method := t.register_aggregate_method(mut ts, name) {
+				return method
+			} else {
+				return err
 			}
 		}
 		if ts.parent_idx == 0 {
@@ -3019,7 +3015,7 @@ fn (mut t Table) unwrap_generic_type_ex_with_depth(typ Type, generic_names []str
 	mut fields := []StructField{}
 	mut nrt := ''
 	mut c_nrt := ''
-	mut new_depth_guard := depth_guard.clone()
+	mut new_depth_guard := []string{}
 	type_idx := typ.idx()
 	if type_idx == 0 || type_idx >= t.type_symbols.len {
 		return typ
@@ -3241,14 +3237,14 @@ fn (mut t Table) unwrap_generic_type_ex_with_depth(typ Type, generic_names []str
 						{
 							fields[i].default_expr_typ = t_typ
 						}
+						fields[i].default_expr = t.convert_generic_default_expr(fields[i].default_expr,
+							t_generic_names, t_concrete_types)
 					} else if fields[i].default_expr_typ == 0
 						|| fields[i].default_expr_typ == nil_type {
 						if fields[i].default_expr.is_nil() && fields[i].typ.is_any_kind_of_pointer() {
 							fields[i].default_expr_typ = fields[i].typ
 						}
 					}
-					fields[i].default_expr = t.convert_generic_default_expr(fields[i].default_expr,
-						t_generic_names, t_concrete_types)
 				}
 			}
 			// update concrete types
@@ -3460,7 +3456,8 @@ pub fn (mut t Table) generic_insts_to_concrete() {
 									}
 								}
 							}
-							if fields[i].has_default_expr {
+							if fields[i].has_default_expr
+							&& fields[i].default_expr_typ.has_flag(.generic) {
 								fields[i].default_expr_typ = t.convert_generic_expr_type(fields[i].default_expr_typ,
 									generic_names, info.concrete_types)
 								fields[i].default_expr = t.convert_generic_default_expr(fields[i].default_expr,

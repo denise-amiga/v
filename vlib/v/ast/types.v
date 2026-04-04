@@ -1600,12 +1600,10 @@ pub fn (t &Table) delete_cached_type_to_str(typ Type, import_aliases_len int) {
 // import_aliases is a map of imported symbol aliases 'module.Type' => 'Type'
 pub fn (t &Table) type_to_str_using_aliases(typ Type, import_aliases map[string]string) string {
 	cache_key := (u64(import_aliases.len) << 32) | u64(typ)
-	mut mt := unsafe { &Table(t) }
-	rlock mt.cached_type_to_str {
-		if cached_res := mt.cached_type_to_str[cache_key] {
-			return cached_res
-		}
+	if cached_res := t.cached_type_to_str[cache_key] {
+		return cached_res
 	}
+	mut mt := unsafe { &Table(t) }
 	sym := t.sym(typ)
 	mut res := sym.name
 	defer {

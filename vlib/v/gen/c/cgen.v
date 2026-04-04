@@ -5105,7 +5105,19 @@ fn (mut g Gen) typeof_expr(node ast.TypeOf) {
 	if !node.is_type {
 		default_type = g.resolve_typeof_expr_type(node.expr, default_type)
 	}
-	typ := g.type_resolver.typeof_type(node.expr, default_type)
+	mut typ := g.type_resolver.typeof_type(node.expr, default_type)
+	// In generic functions, typeof_type may return a type from node.obj.typ which
+	// was mutated by the last checker instantiation. If the var has a generic_typ,
+	// re-resolve from the original generic type using current concrete types.
+	if g.cur_concrete_types.len > 0 && node.expr is ast.Ident && node.expr.obj is ast.Var {
+		var := node.expr.obj as ast.Var
+		if var.generic_typ != 0 {
+			resolved := g.unwrap_generic(var.generic_typ)
+			if resolved != 0 && resolved != ast.void_type {
+				typ = resolved
+			}
+		}
+	}
 	sym := g.table.sym(typ)
 	if sym.kind == .sum_type {
 		// When encountering a .sum_type, typeof() should be done at runtime,
@@ -5217,19 +5229,36 @@ fn (mut g Gen) selector_expr(node ast.SelectorExpr) {
 				if node.field_name == 'name' {
 					// typeof(expr).name
 					mut name_type := node.name_type
+					mut resolved_via_generic := false
 					if node.expr is ast.TypeOf {
-						name_type = g.type_resolver.typeof_type(node.expr.expr, g.resolve_typeof_expr_type(node.expr.expr,
-							name_type))
-						if name_type == ast.void_type_idx {
-							name_type = node.name_type
+						// In generic functions, resolve through function definition
+						// to avoid stale types from the last checker instantiation.
+						if g.cur_fn != unsafe { nil } && g.cur_concrete_types.len > 0 {
+							resolved := g.resolve_typeof_in_generic(node.expr)
+							if resolved != 0 {
+								name_type = resolved
+								resolved_via_generic = true
+							} else {
+								name_type = g.resolved_typeof_name_type(node.expr, name_type)
+							}
+						} else {
+							name_type = g.type_resolver.typeof_type(node.expr.expr, g.resolve_typeof_expr_type(node.expr.expr,
+								name_type))
+							if name_type == ast.void_type_idx {
+								name_type = node.name_type
+							}
 						}
 						// For mut params, typeof_type strips the pointer for comptime,
 						// but typeof(x).name should show the actual pointer type.
-						if node.expr.expr is ast.Ident {
-							if node.expr.expr.obj is ast.Var {
-								if node.expr.expr.obj.is_auto_deref
-									&& node.expr.expr.obj.typ.is_ptr() {
-									name_type = name_type.ref()
+						// Skip when resolved via generic path, as it already preserves
+						// the reference from the parameter type.
+						if !resolved_via_generic {
+							if node.expr.expr is ast.Ident {
+								if node.expr.expr.obj is ast.Var {
+									if node.expr.expr.obj.is_auto_deref
+										&& node.expr.expr.obj.typ.is_ptr() {
+										name_type = name_type.ref()
+									}
 								}
 							}
 						}
