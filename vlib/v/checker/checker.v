@@ -5057,6 +5057,9 @@ fn (mut c Checker) cast_expr(mut node ast.CastExpr) ast.Type {
 		c.warn_alloc('cast to interface', node.pos)
 	}
 	node.typname = c.table.sym(node.typ).name
+	if node.typ.has_flag(.generic) && to_type != node.typ {
+		return to_type
+	}
 	return node.typ
 }
 
