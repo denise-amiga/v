@@ -93,8 +93,9 @@ fn (mut g Gen) gen_expr_to_string(expr ast.Expr, etype ast.Type) {
 		}
 		g.expr(expr)
 	} else if typ == ast.bool_type {
+		g.write('(')
 		g.expr(expr)
-		g.write(' ? _S("true") : _S("false")')
+		g.write(' ? _S("true") : _S("false"))')
 	} else if sym.kind == .none || typ == ast.void_type.set_flag(.option) {
 		if expr is ast.CallExpr {
 			stmt_str := g.go_before_last_stmt()

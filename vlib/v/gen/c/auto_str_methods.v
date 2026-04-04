@@ -34,7 +34,7 @@ fn (mut g Gen) gen_str_default(sym ast.TypeSymbol, styp string, str_fn_name stri
 	g.definitions.writeln('string ${str_fn_name}(${styp} it);')
 	g.auto_str_funcs.writeln('string ${str_fn_name}(${styp} it) {')
 	if convertor == 'bool' {
-		g.auto_str_funcs.writeln('\tstring tmp1 = builtin__string__plus(_S("${styp}("), (${convertor})it ? _S("true") : _S("false"));')
+		g.auto_str_funcs.writeln('\tstring tmp1 = builtin__string__plus(_S("${styp}("), ((${convertor})it ? _S("true") : _S("false")));')
 	} else {
 		g.auto_str_funcs.writeln('\tstring tmp1 = builtin__string__plus(_S("${styp}("), builtin__tos3(_string__plus(_S("${typename_}("), _string__plus(_S(")"), _S(")"))).str));')
 	}
@@ -612,7 +612,7 @@ fn (mut g Gen) gen_str_for_chan(info ast.Chan, styp string, str_fn_name string) 
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, _S("    cap: "));')
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, builtin__int_str(x->cap));')
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, _S(", closed: "));')
-	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, x->closed != 0 ? _S("true") : _S("false"));')
+	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, (x->closed != 0 ? _S("true") : _S("false")));')
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, _S("\\n"));')
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, indents);')
 	g.auto_str_funcs.writeln('\tstrings__Builder_write_string(&sb, _S("}"));')
@@ -1266,7 +1266,7 @@ fn struct_auto_str_func(sym &ast.TypeSymbol, lang ast.Language, _field_type ast.
 			method_str = 'it${op}${final_field_name}${sufix}'
 		}
 		if sym.kind == .bool {
-			return '${method_str} ? _S("true") : _S("false")', false
+			return '(${method_str} ? _S("true") : _S("false"))', false
 		} else if (field_type.is_int_valptr() || field_type.is_float_valptr()) && !expects_ptr {
 			// ptr int can be "nil", so this needs to be casted to a string
 			if sym.kind == .f32 {

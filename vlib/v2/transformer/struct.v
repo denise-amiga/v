@@ -1873,22 +1873,22 @@ fn (t &Transformer) get_field_array_elem_interface_type(struct_name string, fiel
 	field_typ := t.lookup_struct_field_type(struct_name, field_name) or { return none }
 	match field_typ {
 		types.Array {
-			if field_typ.elem_type is types.Interface {
-				return field_typ.elem_type
+			et := field_typ.elem_type
+			if et is types.Interface {
+				return et
 			}
-			if field_typ.elem_type is types.Alias
-				&& field_typ.elem_type.base_type is types.Interface {
-				return field_typ.elem_type
+			if et is types.Alias && et.base_type is types.Interface {
+				return et
 			}
 		}
 		types.Alias {
 			if field_typ.base_type is types.Array {
-				if field_typ.base_type.elem_type is types.Interface {
-					return field_typ.base_type.elem_type
+				et := field_typ.base_type.elem_type
+				if et is types.Interface {
+					return et
 				}
-				if field_typ.base_type.elem_type is types.Alias
-					&& field_typ.base_type.elem_type.base_type is types.Interface {
-					return field_typ.base_type.elem_type
+				if et is types.Alias && et.base_type is types.Interface {
+					return et
 				}
 			}
 		}
