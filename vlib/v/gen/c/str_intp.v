@@ -185,7 +185,7 @@ fn (mut g Gen) str_format(node ast.StringInterLiteral, i int, fmts []u8) (u64, s
 			}
 		}
 	}
-	if node.exprs[i].is_auto_deref_var() {
+	if node.exprs[i].is_auto_deref_var() && typ.nr_muls() > 0 {
 		typ = typ.deref()
 	}
 	if int_ref_interpolates_as_value(expr, typ, fmts[i]) && typ.is_ptr() {
